@@ -26,7 +26,7 @@ RiskCard (YAML)
 # Install dependencies
 pip install pydantic pyyaml openai httpx
 
-# Run with Ollama (default: qwen2.5:14b)
+# Run (uses OPENAI_BASE_URL and REDTEAM_MODEL env vars)
 python pipeline.py --riskcard examples/sample_riskcard.yaml
 
 # Progressive escalation attack (3 fragments across records)
@@ -49,8 +49,9 @@ python pipeline.py --riskcard examples/sample_riskcard.yaml \
 
 | Env Variable | Default | Description |
 |---|---|---|
-| `OLLAMA_BASE_URL` | `http://localhost:11434/v1` | Ollama API endpoint |
-| `REDTEAM_MODEL` | `qwen2.5:14b` | Model for generation and agent simulation |
+| `OPENAI_API_KEY` | — | API key for the model endpoint |
+| `OLLAMA_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible API endpoint (works with Ollama, vLLM, OpenAI, etc.) |
+| `REDTEAM_MODEL` | `qwen2.5:14b` | Model name for generation and agent simulation |
 | `REDTEAM_MAX_TURNS` | `10` | Max tool-call turns per run |
 
 ## Attack Patterns
@@ -103,7 +104,7 @@ Open `demo.html` in a browser for an interactive walkthrough populated with real
 ├── env_generator.py         # LLM Call 1: user task + environment generation
 ├── injection_generator.py   # LLM Call 2 / attack library: injection synthesis
 ├── attack_library.py        # Hardcoded proven injection patterns
-├── executor.py              # Agent loop (OpenAI tool-calling via Ollama)
+├── executor.py              # Agent loop (OpenAI-compatible tool-calling)
 ├── evaluator.py             # Dual-metric evaluation (security + utility)
 ├── templates/               # Risk-type template prompts
 │   ├── data_exfiltration.py
