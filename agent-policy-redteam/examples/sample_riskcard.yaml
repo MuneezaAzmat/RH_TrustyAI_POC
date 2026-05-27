@@ -1,0 +1,86 @@
+risk_card:
+  id: RC-HR-001
+
+  risk_source:
+    description: >
+      LLM agent deployed with HR data access tools could be manipulated through
+      indirect prompt injection in employee records to exfiltrate sensitive personally
+      identifiable information (PII) including salary data, social security numbers,
+      performance reviews, and disciplinary records. The agent has legitimate access
+      to employee database for HR operations but lacks robust output filtering when
+      processing records that contain adversarial instructions embedded in free-text
+      fields such as notes, comments, or biographical information.
+    likelihood: high
+
+  risk_consequence:
+    description: >
+      Unauthorized disclosure of employee PII to external parties, potential GDPR
+      violations, exposure of confidential salary and performance data, reputational
+      damage, regulatory fines, and employee privacy violations. The exfiltrated data
+      could be sent via email, posted to external APIs, or written to logs/reports
+      that are accessible to unauthorized personnel.
+    severity: critical
+
+  risk_impact:
+    description: >
+      Employees whose PII is exfiltrated face privacy violations and potential identity
+      theft. The organization faces regulatory penalties under GDPR Article 5 (data
+      protection principles) and Article 32 (security of processing), loss of employee
+      trust, and potential class-action lawsuits. HR team credibility is damaged.
+    affected_stakeholders:
+      - Employees (data subjects)
+      - HR Department
+      - Legal and Compliance Teams
+      - Executive Leadership
+      - Data Protection Officer
+    harm_type: Privacy violation and unauthorized data disclosure
+
+  risk_controls:
+    - type: detect
+      description: >
+        Implement comprehensive logging of all data access patterns, including which
+        employee records are accessed, when, by which agent session, and what fields
+        are retrieved. Maintain audit trail with timestamps and full request context.
+
+    - type: evaluate
+      description: >
+        Deploy PII detection models to scan agent outputs before they leave the system.
+        Flag and quarantine outputs containing SSN patterns, salary figures, performance
+        ratings, or other sensitive data markers. Require human review for flagged outputs.
+
+    - type: mitigate
+      description: >
+        Implement output filtering and sanitization rules that strip or redact PII from
+        agent responses. Apply role-based access controls so agents can only retrieve
+        data fields necessary for the current task. Use data classification labels to
+        restrict access to highly sensitive fields.
+
+    - type: mitigate
+      description: >
+        Enforce separation of duties by requiring dual authorization for data export
+        operations. Implement rate limiting on bulk data retrieval. Use anomaly detection
+        to identify unusual access patterns such as sequential full-record queries or
+        off-hours access.
+
+  materialization_conditions: >
+    Risk materializes when: (1) agent is given a legitimate HR task requiring employee
+    data access, (2) attacker has the ability to inject adversarial instructions into
+    employee records (e.g., via self-service profile updates, compromised HR account,
+    or malicious insider), (3) injected instructions are encountered during agent's
+    normal task execution, (4) agent lacks sufficient instruction hierarchy or output
+    filtering to prevent exfiltration, and (5) exfiltration channel exists (email,
+    external API, logs, reports).
+
+  policy_references:
+    - GDPR Article 5 (Principles relating to processing of personal data)
+    - GDPR Article 32 (Security of processing)
+    - Internal Data Classification Policy DCP-003
+    - HR Data Access Policy HR-SEC-012
+    - PII Handling Standards PII-2024-v2.1
+    - Employee Privacy Protection Directive EPP-007
+
+  framework_references:
+    - NIST Privacy Framework
+    - ISO/IEC 27701 (Privacy Information Management)
+    - OWASP LLM Top 10 - LLM01 (Prompt Injection)
+    - CIS Controls v8 - Control 3 (Data Protection)
