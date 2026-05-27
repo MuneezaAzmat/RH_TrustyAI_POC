@@ -1,6 +1,6 @@
 # Policy-Driven Agentic Red Teaming
 
-A framework that takes structured risk assessments from [risk-landscaper](https://github.com/hjrnunes/risk-landscaper) and automatically generates indirect prompt injection scenarios to red-team AI agents. Works with any OpenAI-compatible model endpoint. Designed for agents deployed on [OGX](https://github.com/ogx-ai/ogx) + [OpenShell](https://github.com/NVIDIA/OpenShell), but not limited to them.
+A framework that takes structured risk assessments from [risk-landscaper](https://github.com/hjrnunes/risk-landscaper) and automatically generates indirect prompt injection scenarios to red-team AI agents. Uses any OpenAI-compatible model endpoint to simulate an agent with tool-calling. Future work: native integration with [OGX](https://github.com/ogx-ai/ogx) + [OpenShell](https://github.com/NVIDIA/OpenShell) for testing deployed agents.
 
 ## How It Works
 
