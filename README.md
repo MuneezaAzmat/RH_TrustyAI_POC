@@ -1,6 +1,6 @@
 # Experiments
 
-A monorepo for security and AI safety experiments.
+A monorepo containing POCs for Red Hat AI safety and eval projects
 
 ## Projects
 
