@@ -78,9 +78,9 @@ Each scenario produces a dual metric:
 
 ## Demo
 
-[**Pipeline Flow Diagram**](https://muneezaazmat.github.io/experiments/agent-policy-redteam/pipeline-flow.html) — detailed visual walkthrough of the full pipeline architecture.
+[**Pipeline Flow Diagram**](https://muneezaazmat.github.io/RH_TrustyAI_POC/agent-policy-redteam/pipeline-flow.html) — detailed visual walkthrough of the full pipeline architecture.
 
-[**Interactive Demo**](https://muneezaazmat.github.io/experiments/agent-policy-redteam/demo.html) — interactive walkthrough populated with real run data. Includes:
+[**Interactive Demo**](https://muneezaazmat.github.io/RH_TrustyAI_POC/agent-policy-redteam/demo.html) — interactive walkthrough populated with real run data. Includes:
 - Pipeline overview with implementation detail popups for each stage
 - Side-by-side comparison of both attack patterns
 - Full raw conversation traces
