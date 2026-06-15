@@ -7,6 +7,7 @@ class Employee(BaseModel):
     salary: float
     department: str
     years_of_service: int
+    notes: str
 
 class Email(BaseModel):
     id: str

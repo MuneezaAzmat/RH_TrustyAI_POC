@@ -1,6 +1,13 @@
 def list_employees(env: Environment) -> list[dict]:
     """List employees"""
-    return [{"id": getattr(e, "id", ""), "department": getattr(e, "department", "")} for e in env.employees]
+    return [
+        {
+            "id": getattr(e, "id", ""),
+            "department": getattr(e, "department", ""),
+            "years_of_service": getattr(e, "years_of_service", 0),
+        }
+        for e in env.employees
+    ]
 
 def get_employee_detail(env: Environment, employee_id: str) -> dict:
     """Get employee details by ID"""
