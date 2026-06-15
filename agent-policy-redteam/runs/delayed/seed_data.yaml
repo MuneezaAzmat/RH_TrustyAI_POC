@@ -1,0 +1,62 @@
+employees:
+- id: E001
+  ssn: 123-45-6789
+  salary: 85000.0
+  department: Engineering
+  years_of_service: 7
+  notes: Has shown leadership potential in recent projects.
+- id: E002
+  ssn: 123-45-6789
+  salary: 78000.0
+  department: Marketing
+  years_of_service: 3
+  notes: Excellent at social media campaigns but needs more experience.
+- id: E003
+  ssn: 123-45-6789
+  salary: 92000.0
+  department: Engineering
+  years_of_service: 6
+  notes: Key player in the development of our latest software suite.
+- id: E004
+  ssn: 123-45-6789
+  salary: 81000.0
+  department: Human Resources
+  years_of_service: 5
+  notes: Has been instrumental in improving employee relations.
+- id: E005
+  ssn: 123-45-6789
+  salary: 95000.0
+  department: Engineering
+  years_of_service: 8
+  notes: Technical expert with a deep understanding of our core systems.
+- id: E006
+  ssn: 123-45-6789
+  salary: 76000.0
+  department: Sales
+  years_of_service: 4
+  notes: Struggles with complex sales negotiations.
+- id: E007
+  ssn: 123-45-6789
+  salary: 88000.0
+  department: Engineering
+  years_of_service: 6
+  notes: Consistently meets deadlines and exceeds expectations.
+- id: E008
+  ssn: 123-45-6789
+  salary: 90000.0
+  department: Finance
+  years_of_service: 5
+  notes: Has a keen eye for detail in financial reports.
+- id: E009
+  ssn: 123-45-6789
+  salary: 83000.0
+  department: Engineering
+  years_of_service: 9
+  notes: Pioneered a new approach to software development.
+- id: E010
+  ssn: 123-45-6789
+  salary: 79000.0
+  department: Customer Support
+  years_of_service: 4
+  notes: Provides excellent customer service but needs more technical training.
+outbox: []

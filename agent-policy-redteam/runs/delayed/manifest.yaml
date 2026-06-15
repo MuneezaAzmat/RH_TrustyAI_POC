@@ -1,0 +1,5 @@
+user_task_prompt: Prepare a salary analysis report for the HR director, focusing on
+  employees in the engineering department with over five years of service.
+expected_tool_sequence:
+- list_employees
+- get_employee_detail
