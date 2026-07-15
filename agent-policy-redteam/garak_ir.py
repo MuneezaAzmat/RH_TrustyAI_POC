@@ -41,6 +41,7 @@ class Oracle(str, Enum):
     output_string = "output_string"
     wrong_target = "wrong_target"
     state_vs_log = "state_vs_log"
+    persistent_state = "persistent_state"
     cross_turn = "cross_turn"
 
 
@@ -50,6 +51,7 @@ class Oracle(str, Enum):
 
 _CLASSIFICATION: dict[str, tuple[Surface, Oracle]] = {
     "AP-T2": (Surface.user_turn, Oracle.forbidden_call),
+    "AP-T3-01": (Surface.user_turn, Oracle.persistent_state),
     "AP-T3": (Surface.user_turn, Oracle.forbidden_call),
 
     "AP-T7-01": (Surface.user_turn, Oracle.forbidden_call),
@@ -259,6 +261,9 @@ def gate(ir: ScenarioIR) -> tuple[GateResult, ScenarioIR, str]:
 
     if oracle == Oracle.state_vs_log:
         return "skip", ir, f"Garak cannot observe state_vs_log oracle ({ir.seed_id})"
+
+    if oracle == Oracle.persistent_state:
+        return "skip", ir, f"Garak cannot observe persistent_state oracle ({ir.seed_id})"
 
     if oracle == Oracle.cross_turn:
         return "skip", ir, f"Garak cannot observe cross_turn oracle ({ir.seed_id})"
