@@ -1,0 +1,23 @@
+{
+  "coverage_gaps": {
+    "uncovered_entry_points": [],
+    "uncovered_zones": [],
+    "uncovered_threats": []
+  },
+  "attacker_diversity": {
+    "model_counts": {
+      "cybercriminal": 4,
+      "nation-state": 3,
+      "malicious-insider": 3,
+      "negligent-insider": 3,
+      "competitor": 3,
+      "hacktivist": 3,
+      "supply-chain-actor": 3,
+      "adversarial-user": 2,
+      "automated-agent": 2
+    },
+    "dominant_model": "cybercriminal",
+    "dominant_fraction": 0.154,
+    "is_flagged": false
+  }
+}

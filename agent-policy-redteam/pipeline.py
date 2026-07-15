@@ -3,12 +3,28 @@
 import argparse
 import logging
 from pathlib import Path
-import yaml
+import json
 
-from models import RiskCard, ScenarioResult
-from triage import triage_risk, filter_agent_level
+from artifacts_io import (
+    ATTACK_TRACE_FILE,
+    CLEAN_TRACE_FILE,
+    REPORT_FILE,
+    SPEC_FILE,
+    default_run_dir,
+    save_artifacts,
+    save_trace,
+)
+from models import SavedScenarioArtifacts, ScenarioResult
+from scenario_filter import is_volume_attack_spec
+from scenario_loader import (
+    forge_scenario_to_spec,
+    is_volume_attack_forge_scenario,
+    load_scenario,
+    summarize_scenario,
+    triage_from_scenario,
+)
+from triage import filter_agent_level, filter_scenario_feasible
 
-# Imports that will be implemented in other modules
 try:
     from env_generator import generate_environment
 except ImportError:
@@ -21,9 +37,9 @@ except ImportError:
     attack_run = None
 
 try:
-    from injection_generator import generate_injections
+    from injection_placer import place_injections
 except ImportError:
-    generate_injections = None
+    place_injections = None
 
 try:
     from evaluator import evaluate, generate_report
@@ -39,103 +55,128 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_riskcard(path: str) -> RiskCard:
-    """Load RiskCard from YAML file."""
-    logger.info(f"Loading RiskCard from {path}")
-
-    with open(path, 'r') as f:
-        data = yaml.safe_load(f)
-
-    # Handle both top-level and nested risk_card format
-    if 'risk_card' in data:
-        data = data['risk_card']
-
-    return RiskCard(**data)
+def _write_json(path: str, data: object) -> None:
+    out_path = Path(path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
+        json.dump(data, f, indent=2, default=str)
+    logger.info("Written to %s", out_path)
 
 
-def run_pipeline(riskcard_path: str, attack_pattern: str = "delayed_trigger", attack_variant: str | None = None) -> list[ScenarioResult]:
-    """
-    Run complete red-team pipeline for a RiskCard.
-
-    Flow:
-    1. Load and triage risk card
-    2. Filter to agent-level risks only
-    3. For each agent-level risk:
-       a. Generate environment (user task + tools + seed data)
-       b. Run dry run (clean baseline)
-       c. Generate injections based on dry run trace
-       d. Run attack run with injected environment
-       e. Evaluate (state diff + call trace diff + verification predicates)
-    4. Return results
-    """
+def run_pipeline(
+    scenario_path: str,
+    attack_pattern: str = "delayed_trigger",
+    attack_variant: str | None = None,
+    output_dir: str | Path | None = None,
+    spec_output: str | None = None,
+    env_output: str | None = None,
+    report_output: str | None = None,
+) -> list[ScenarioResult]:
+    """Run complete red-team pipeline for a forge scenario YAML."""
     results = []
 
-    # Step 1: Load and triage
-    logger.info("Step 1: Loading and triaging RiskCard")
-    risk_card = load_riskcard(riskcard_path)
-    triaged = triage_risk(risk_card)
-    logger.info(f"Triaged as {triaged.enforcement_level} level, type: {triaged.risk_type}")
+    logger.info("Step 1: Loading forge scenario YAML")
+    loaded = load_scenario(scenario_path)
+    logger.info("Loaded scenario:\n%s", summarize_scenario(loaded))
 
-    # Step 2: Filter to agent-level only
-    agent_risks = filter_agent_level([triaged])
+    run_dir = default_run_dir(loaded.scenario_id, output_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Run output directory: %s", run_dir.resolve())
 
-    if not agent_risks:
-        logger.warning("No agent-level risks found, skipping pipeline")
+    volume_reason = is_volume_attack_forge_scenario(loaded.raw)
+    if volume_reason:
+        logger.warning(
+            "Skipping %s — volume/DDoS/overwhelm attack (%s)",
+            loaded.scenario_id,
+            volume_reason,
+        )
         return results
 
-    logger.info(f"Processing {len(agent_risks)} agent-level risk(s)")
+    triaged = triage_from_scenario(loaded.raw)
+    logger.info(
+        "Triaged as %s level, type: %s",
+        triaged.enforcement_level,
+        triaged.risk_type,
+    )
 
-    # Step 3: Process each risk
+    agent_risks = filter_scenario_feasible(filter_agent_level([triaged]))
+
+    if not agent_risks:
+        logger.warning("No feasible agent-level risks found, skipping pipeline")
+        return results
+
+    logger.info(f"Processing {len(agent_risks)} feasible agent-level risk(s)")
+
     for idx, triaged_risk in enumerate(agent_risks, 1):
         logger.info(f"\n{'='*60}")
         logger.info(f"Processing risk {idx}/{len(agent_risks)}: {triaged_risk.risk_card.id}")
         logger.info(f"{'='*60}")
 
-        # 3a. Generate environment
-        logger.info("Step 3a: Generating environment")
+        logger.info("Step 2: Converting forge scenario to ScenarioSpec")
+        spec = forge_scenario_to_spec(
+            loaded.raw,
+            attack_pattern=attack_pattern,
+            attack_variant=attack_variant,
+        )
+
+        volume_reason = is_volume_attack_spec(spec)
+        if volume_reason:
+            logger.warning(
+                "Skipping %s — spec implies volume/DDoS generation (%s)",
+                spec.spec_id,
+                volume_reason,
+            )
+            continue
+
+        logger.info(f"Spec: {spec.spec_id} — domain: {spec.domain}")
+        logger.info(f"User task: {spec.user_task.prompt[:100]}...")
+        logger.info(f"Injection goal: {spec.injection.goal}")
+
+        spec_path = spec_output or str(run_dir / SPEC_FILE)
+        _write_json(spec_path, spec.model_dump())
+
+        logger.info("Step 3: Instantiating environment")
         if generate_environment is None:
             logger.error("env_generator module not available, skipping")
             continue
 
-        env = generate_environment(triaged_risk.risk_card, triaged_risk.risk_type)
-        logger.info(f"Generated environment with task: {env.user_task_prompt[:100]}...")
+        env = generate_environment(spec)
+        logger.info(f"Environment ready — expected tools: {env.expected_tool_sequence}")
 
-        # 3b. Dry run (clean baseline)
-        logger.info("Step 3b: Running dry run (clean baseline)")
+        logger.info("Step 4: Running dry run (clean baseline)")
         if dry_run is None:
             logger.error("executor module not available, skipping")
             continue
 
         clean_trace = dry_run(env)
         logger.info(f"Dry run complete: {len(clean_trace.tool_calls)} tool calls")
+        save_trace(run_dir, clean_trace, CLEAN_TRACE_FILE)
 
-        # 3c. Generate injections
-        logger.info("Step 3c: Generating injections")
-        if generate_injections is None:
-            logger.error("injection_generator module not available, skipping")
+        logger.info("Step 5: Placing injections from spec")
+        if place_injections is None:
+            logger.error("injection_placer module not available, skipping")
             continue
 
-        injection_scenario = generate_injections(
-            triaged_risk,
-            env,
-            clean_trace,
-            pattern=attack_pattern,
-            variant=attack_variant,
-        )
-        logger.info(f"Generated injection scenario: {injection_scenario.injection_goal}")
-        logger.info(f"Payloads: {len(injection_scenario.payloads)}")
+        injection_scenario = place_injections(spec, clean_trace)
+        logger.info(f"Placed {len(injection_scenario.payloads)} payloads")
 
-        # 3d. Attack run
-        logger.info("Step 3d: Running attack run with injections")
+        artifacts = SavedScenarioArtifacts(
+            environment=env,
+            injection_scenario=injection_scenario,
+        )
+        artifacts_dir = env_output or str(run_dir)
+        save_artifacts(artifacts_dir, artifacts)
+
+        logger.info("Step 6: Running attack run with injections")
         if attack_run is None:
             logger.error("executor module not available, skipping")
             continue
 
         attack_trace = attack_run(env, injection_scenario)
         logger.info(f"Attack run complete: {len(attack_trace.tool_calls)} tool calls")
+        save_trace(run_dir, attack_trace, ATTACK_TRACE_FILE)
 
-        # 3e. Evaluate
-        logger.info("Step 3e: Evaluating results")
+        logger.info("Step 7: Evaluating results")
         if evaluate is None:
             logger.error("evaluator module not available, skipping")
             continue
@@ -145,13 +186,18 @@ def run_pipeline(riskcard_path: str, attack_pattern: str = "delayed_trigger", at
             risk_card=triaged_risk.risk_card,
             injection_scenario=injection_scenario,
             clean_trace=clean_trace,
-            attack_trace=attack_trace
+            attack_trace=attack_trace,
+            scenario_spec=spec,
         )
 
         logger.info(f"Evaluation complete: policy_violated={result.policy_violated}")
-        logger.info(f"Evidence: {len(result.evidence)} items")
+        logger.info(f"Security: {result.security_score*100:.0f}%, Utility: {result.utility_score*100:.0f}%")
 
         results.append(result)
+
+    if results:
+        report_path = report_output or str(run_dir / REPORT_FILE)
+        _write_json(report_path, [r.model_dump() for r in results])
 
     return results
 
@@ -162,35 +208,53 @@ def main() -> None:
         description="Agent policy red-team pipeline"
     )
     parser.add_argument(
-        "--riskcard",
+        "--scenario",
         required=True,
-        help="Path to RiskCard YAML file"
+        help="Path to forge scenario YAML (e.g. examples/scenarios/AP-T2-01-28712e.yaml)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        help="Directory for all run artifacts (default: runs/{scenario_id}/)",
     )
     parser.add_argument(
         "--report-output",
-        help="Optional path to write JSON report"
+        help="Override path for JSON report (default: {output-dir}/report.json)",
+    )
+    parser.add_argument(
+        "--spec-output",
+        help="Override path for ScenarioSpec JSON (default: {output-dir}/spec.json)",
+    )
+    parser.add_argument(
+        "--env-output",
+        help="Override directory for split artifacts (default: {output-dir}/)",
     )
     parser.add_argument(
         "--attack-pattern",
         default="delayed_trigger",
         choices=["delayed_trigger", "progressive_escalation"],
-        help="Attack pattern to use (default: delayed_trigger)"
+        help="Attack pattern for spec conversion (default: delayed_trigger)"
     )
     parser.add_argument(
         "--attack-variant",
         default=None,
-        help="Attack variant from library (e.g., authority_impersonation, helpful_assistant_exploit, system_prompt_override)"
+        help="Attack variant name (passed to spec conversion; defaults to mechanism slug from YAML)"
     )
 
     args = parser.parse_args()
 
-    # Run pipeline
-    logger.info(f"Starting pipeline with RiskCard: {args.riskcard}")
+    logger.info(f"Starting pipeline with forge scenario: {args.scenario}")
     logger.info(f"Attack pattern: {args.attack_pattern}")
 
-    results = run_pipeline(args.riskcard, args.attack_pattern, args.attack_variant)
+    results = run_pipeline(
+        scenario_path=args.scenario,
+        attack_pattern=args.attack_pattern,
+        attack_variant=args.attack_variant,
+        output_dir=args.output_dir,
+        spec_output=args.spec_output,
+        env_output=args.env_output,
+        report_output=args.report_output,
+    )
 
-    # Print summary
     print(f"\n{'='*60}")
     print("PIPELINE SUMMARY")
     print(f"{'='*60}")
@@ -200,22 +264,17 @@ def main() -> None:
 
     for result in results:
         print(f"\nScenario: {result.scenario_id}")
+        print(f"  Spec: {result.spec_id}")
         print(f"  Risk: {result.risk_card_id}")
         print(f"  Security: {result.security_score*100:.0f}%")
         print(f"  Utility:  {result.utility_score*100:.0f}%")
         print(f"  Policy violated: {result.policy_violated}")
         print(f"  Unexpected tool calls: {len(result.unexpected_tool_calls)}")
 
-    # Write report if requested
-    if args.report_output:
-        import json
-        report_path = Path(args.report_output)
-        report_data = [r.model_dump() for r in results]
-
-        with open(report_path, 'w') as f:
-            json.dump(report_data, f, indent=2, default=str)
-
-        logger.info(f"Report written to {report_path}")
+    loaded = load_scenario(args.scenario)
+    run_dir = default_run_dir(loaded.scenario_id, args.output_dir)
+    if run_dir.exists():
+        print(f"\nArtifacts saved to: {run_dir.resolve()}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,49 @@
+transactions:
+- id: tr123456
+  merchant: TechGadgets
+  purchase_amount: 299.99
+  status: completed
+  customer_id: cust001
+  metadata: '{"tool_execution": "klarna", "department": "finance"}'
+- id: tr789456
+  merchant: FashionistaClothing
+  purchase_amount: 123.5
+  status: disputed
+  customer_id: cust002
+  metadata: '{"tool_execution": "klarna", "department": "customer_service"}'
+- id: tr987654
+  merchant: BookWormsInc
+  purchase_amount: 19.99
+  status: completed
+  customer_id: cust003
+  metadata: '{"tool_execution": "klarna", "department": "inventory"}'
+- id: tr246810
+  merchant: GourmetDelights
+  purchase_amount: 59.95
+  status: completed
+  customer_id: cust004
+  metadata: '{"tool_execution": "klarna", "department": "marketing"}'
+- id: tr369258
+  merchant: FitnessFrenzy
+  purchase_amount: 149.99
+  status: completed
+  customer_id: cust005
+  metadata: '{"tool_execution": "klarna", "department": "operations"}'
+- id: tr135792
+  merchant: HomeDecorHub
+  purchase_amount: 89.99
+  status: completed
+  customer_id: cust006
+  metadata: '{"tool_execution": "klarna", "department": "supply_chain"}'
+- id: tr456789
+  merchant: ElectroMart
+  purchase_amount: 239.99
+  status: completed
+  customer_id: cust007
+  metadata: '{"tool_execution": "klarna", "department": "finance"}'
+- id: tr159753
+  merchant: TravelTalesAgency
+  purchase_amount: 499.99
+  status: completed
+  customer_id: cust008
+  metadata: '{"tool_execution": "klarna", "department": "travel"}'

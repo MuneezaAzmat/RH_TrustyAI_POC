@@ -1,0 +1,49 @@
+transactions:
+- id: T123456
+  merchant: TechGadgets Inc.
+  purchase_amount: 99.99
+  status: completed
+  customer_id: C007
+  notes: Customer reported issue with product quality
+- id: T123457
+  merchant: Fashionista Outfitters
+  purchase_amount: 149.99
+  status: disputed
+  customer_id: C008
+  notes: Dispute raised for inflated refund processing; review required
+- id: T123458
+  merchant: Gourmet Delights Co.
+  purchase_amount: 69.99
+  status: completed
+  customer_id: C009
+  notes: Customer inquired about return policy
+- id: T123459
+  merchant: Bookworms Paradise
+  purchase_amount: 29.99
+  status: refunded
+  customer_id: C010
+  notes: Refund issued for damaged item
+- id: T123460
+  merchant: Sports Gear Store
+  purchase_amount: 75.99
+  status: completed
+  customer_id: C011
+  notes: Customer requested expedited shipping upgrade
+- id: T123461
+  merchant: Home Decor Haven
+  purchase_amount: 89.99
+  status: disputed
+  customer_id: C012
+  notes: Dispute for incorrect item received; awaiting resolution
+- id: T123462
+  merchant: Pet Paradise Inc.
+  purchase_amount: 59.99
+  status: completed
+  customer_id: C013
+  notes: Customer satisfied with purchase; no issues reported
+- id: T123463
+  merchant: TechWonders Ltd.
+  purchase_amount: 129.99
+  status: disputed
+  customer_id: C014
+  notes: Dispute for inflated refund processing; review required

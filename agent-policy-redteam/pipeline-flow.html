@@ -356,32 +356,32 @@
 <body>
 
 <h1 style="margin:0; text-indent:-48px;"><img src="redhat-logo.png" alt="Red Hat" style="height:38px; vertical-align:middle; margin-right:10px;">Policy-Driven Agentic Red Teaming</h1>
-<p class="subtitle">Automated Indirect Prompt Injection Testing from Risk Assessments</p>
+<p class="subtitle">Automated Indirect Prompt Injection Testing from Forge Scenarios</p>
 
 <div class="pipeline">
 
   <div class="stage">
     <div class="stage-header">
       <div class="stage-number">IN</div>
-      <div class="stage-title">RiskCard</div>
+      <div class="stage-title">Forge Scenario</div>
     </div>
-    <div class="stage-desc">Structured risk assessment describing a specific threat to an AI agent deployment — the single input that drives the entire pipeline.</div>
+    <div class="stage-desc">Pre-built YAML from <code>examples/scenarios/</code> — narrative, attack tree, threat metadata, and embedded risk faceting drive the entire pipeline.</div>
     <div class="details details-4col">
       <div class="detail-box">
-        <div class="detail-label">Risk Source</div>
-        <div class="detail-content">What the agent can access and how it could be exploited</div>
+        <div class="detail-label">Narrative</div>
+        <div class="detail-content">Title, summary, entry point, and attack steps</div>
       </div>
       <div class="detail-box">
-        <div class="detail-label">Risk Consequence</div>
-        <div class="detail-content">Impact of a successful attack (data breach, privilege escalation, corruption)</div>
+        <div class="detail-label">Attack Tree</div>
+        <div class="detail-content">Adversarial goal the injection attempts to achieve</div>
       </div>
       <div class="detail-box">
-        <div class="detail-label">Controls</div>
-        <div class="detail-content">Existing mitigations: logging, PII filters, dual auth, rate limits</div>
+        <div class="detail-label">Threat Metadata</div>
+        <div class="detail-content">Threat ID, mechanism, OWASP/ATLAS taxonomy refs</div>
       </div>
       <div class="detail-box">
-        <div class="detail-label">Policy Refs</div>
-        <div class="detail-content">GDPR, NIST Privacy, ISO 27701, OWASP LLM Top 10</div>
+        <div class="detail-label">Risk Faceting</div>
+        <div class="detail-content">Embedded source, consequence, impact, and controls for triage</div>
       </div>
     </div>
   </div>
@@ -391,13 +391,13 @@
   <div class="stage">
     <div class="stage-header">
       <div class="stage-number">1</div>
-      <div class="stage-title">Risk Triage</div>
+      <div class="stage-title">Scenario Loader + Triage</div>
       <span class="stage-tag">Deterministic</span>
     </div>
-    <div class="stage-desc">Classify the risk to determine the attack surface level and select the appropriate risk-type template for environment generation.</div>
+    <div class="stage-desc">Load forge YAML, classify enforcement level and risk type, and convert to a complete ScenarioSpec via <code>forge_scenario_to_spec()</code>.</div>
     <div class="details details-2col">
       <div class="detail-box">
-        <div class="detail-label">Classification</div>
+        <div class="detail-label">Triage</div>
         <div class="detail-content">
           <ul>
             <li><strong>Agent-level</strong> — prompt injection via data the agent reads</li>
@@ -406,104 +406,56 @@
         </div>
       </div>
       <div class="detail-box">
-        <div class="detail-label">Risk Type Selection</div>
+        <div class="detail-label">ScenarioSpec Output</div>
         <div class="detail-content">
           <ul>
-            <li><code>data_exfiltration</code> — sensitive fields + communication channel</li>
-            <li><code>unauthorized_action</code> — privilege fields + privileged tools</li>
-            <li><code>data_corruption</code> — integrity fields + modification tools</li>
+            <li>User task, injection goal, payload templates</li>
+            <li>Security + utility criteria</li>
+            <li><code>domain_skeleton</code> (entities, tools, seed constraints)</li>
           </ul>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="connector"><span class="connector-label">Risk Type + Template</span><div class="arrow"></div></div>
+  <div class="connector"><span class="connector-label">ScenarioSpec</span><div class="arrow"></div></div>
 
   <div class="stage">
     <div class="stage-header">
       <div class="stage-number">2</div>
-      <div class="stage-title">Environment Generation</div>
-      <span class="stage-tag">LLM Call</span>
+      <div class="stage-title">Environment Instantiator</div>
+      <span class="stage-tag">Codegen + LLM Seed</span>
     </div>
-    <div class="stage-desc">Generate a minimal environment slice on the fly — only the entities, tools, data, and task context needed to exercise this specific risk. No pre-built synthetic environments required.</div>
+    <div class="stage-desc">Deterministic codegen builds Pydantic models and CRUD tools from <code>domain_skeleton</code>. LLM generates only seed data against the fixed schema.</div>
     <div class="details details-2col">
       <div class="detail-box">
-        <div class="detail-label">Generated Environment</div>
+        <div class="detail-label">Deterministic Codegen</div>
         <div class="detail-content">
           <ul>
             <li><strong>Pydantic Models</strong> — entity schemas with sensitive + non-sensitive fields</li>
-            <li><strong>CRUD Tools</strong> — data access functions (<code>list_</code>, <code>get_</code>, <code>search_</code>)</li>
-            <li><strong>Exfil Channel</strong> — plausible tool for misuse (<code>send_email</code>, <code>export_data</code>)</li>
-            <li><strong>Seed Data</strong> — 5-10 realistic records with plausible values</li>
+            <li><strong>CRUD Tools</strong> — data access functions (<code>list_</code>, <code>get_</code>)</li>
+            <li><strong>Trigger Tool</strong> — privileged or communication tool from spec</li>
           </ul>
         </div>
       </div>
       <div class="detail-box">
-        <div class="detail-label">Task Pair</div>
+        <div class="detail-label">LLM Seed Data</div>
         <div class="detail-content">
-          <div class="inline-split">
-            <div>
-              <div class="inline-group-title" style="color: var(--text);">User Task (Legitimate)</div>
-              <div>A benign task requiring data access but not exfil tools<br><em style="opacity:0.55;">e.g., "Summarize Q3 performance reviews"</em></div>
-            </div>
-            <div>
-              <div class="inline-group-title" style="color: var(--rh-red);">Adversarial Objective</div>
-              <div>Goal the injection attempts to achieve, derived from the risk card<br><em style="opacity:0.55;">e.g., "Exfiltrate SSNs via send_email"</em></div>
-            </div>
-          </div>
+          <ul>
+            <li>5–10 realistic records matching entity schema</li>
+            <li>Non-empty target surfaces for injection placement</li>
+            <li>Validated against fixed Environment class; fallback if LLM fails</li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="connector"><span class="connector-label">Generated Code + Data</span><div class="arrow"></div></div>
+  <div class="connector"><span class="connector-label">Models + Tools + Seed</span><div class="arrow"></div></div>
 
   <div class="stage">
     <div class="stage-header">
       <div class="stage-number">3</div>
-      <div class="stage-title">Programmatic Validation</div>
-      <span class="stage-tag">Deterministic</span>
-    </div>
-    <div class="stage-desc">Validate the generated environment before any agent interaction — ensures tool schemas are well-formed, executable, and match expected signatures.</div>
-    <div class="details details-3col">
-      <div class="detail-box">
-        <div class="detail-label">Code Validation</div>
-        <div class="detail-content">
-          <ul>
-            <li>Pydantic models parse without error</li>
-            <li>Tool functions are callable</li>
-            <li>Seed data deserializes into models</li>
-          </ul>
-        </div>
-      </div>
-      <div class="detail-box">
-        <div class="detail-label">Schema Validation</div>
-        <div class="detail-content">
-          <ul>
-            <li>OpenAI-format tool schemas extracted via <code>inspect</code></li>
-            <li>Parameter types match function signatures</li>
-            <li>Required fields present</li>
-          </ul>
-        </div>
-      </div>
-      <div class="detail-box">
-        <div class="detail-label">On Failure</div>
-        <div class="detail-content">
-          <ul>
-            <li>Retry environment generation with error feedback</li>
-            <li>Ensures no invalid environments reach agent execution</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="connector"><span class="connector-label">Validated Environment</span><div class="arrow"></div></div>
-
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number">4</div>
       <div class="stage-title">Dry Run (Clean Baseline)</div>
       <span class="stage-tag">Agent Execution</span>
     </div>
@@ -550,11 +502,11 @@
 
   <div class="stage">
     <div class="stage-header">
-      <div class="stage-number">5</div>
-      <div class="stage-title">Trace-Informed Injection Generation</div>
-      <span class="stage-tag">Library + LLM Fallback</span>
+      <div class="stage-number">4</div>
+      <div class="stage-title">Injection Placer</div>
+      <span class="stage-tag">Deterministic</span>
     </div>
-    <div class="stage-desc">Generate and place injection payloads using the dry-run trace — payloads are embedded only into records the agent actually accessed, in free-text fields it reads but doesn't validate.</div>
+    <div class="stage-desc">Fill payload templates from ScenarioSpec and place injections in records the agent accessed during the dry run — payloads derived from scenario YAML, no LLM call.</div>
     <div class="details details-2col">
       <div class="detail-box">
         <div class="detail-label">Attack Patterns</div>
@@ -594,7 +546,7 @@
 
   <div class="stage">
     <div class="stage-header">
-      <div class="stage-number">6</div>
+      <div class="stage-number">5</div>
       <div class="stage-title">Attack Run</div>
       <span class="stage-tag">Agent Execution</span>
     </div>
@@ -636,7 +588,7 @@
 
   <div class="stage">
     <div class="stage-header">
-      <div class="stage-number">7</div>
+      <div class="stage-number">6</div>
       <div class="stage-title">Deterministic Dual-Metric Evaluation</div>
       <span class="stage-tag">Predicate-Based — No LLM Judge</span>
     </div>

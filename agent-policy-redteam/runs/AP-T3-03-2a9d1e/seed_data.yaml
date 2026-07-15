@@ -1,0 +1,49 @@
+transactions:
+- id: T12345
+  merchant: TechGadgets Inc.
+  purchase_amount: 299.99
+  status: completed
+  customer_id: C001
+  notes: Customer reported issues with product quality
+- id: T67890
+  merchant: FashionFusion Co.
+  purchase_amount: 345.0
+  status: disputed
+  customer_id: C002
+  notes: Shadow refund request pending review for suspected privilege escalation
+- id: T11223
+  merchant: BookWorms Ltd.
+  purchase_amount: 79.5
+  status: completed
+  customer_id: C003
+  notes: Customer inquired about return policy
+- id: T45678
+  merchant: GourmetGrub Inc.
+  purchase_amount: 120.0
+  status: refunded
+  customer_id: C004
+  notes: Refund processed due to food spoilage
+- id: T90123
+  merchant: FitnessHub Corp.
+  purchase_amount: 59.99
+  status: completed
+  customer_id: C005
+  notes: Customer requested workout plan adjustment
+- id: T87654
+  merchant: HomeDecor Co.
+  purchase_amount: 199.99
+  status: disputed
+  customer_id: C006
+  notes: Request for expedited refund due to delivery delay
+- id: T32167
+  merchant: TechGadgets Inc.
+  purchase_amount: 450.0
+  status: completed
+  customer_id: C007
+  notes: Customer reported missing accessories with product
+- id: T98765
+  merchant: FashionFusion Co.
+  purchase_amount: 230.0
+  status: disputed
+  customer_id: C008
+  notes: Shadow refund request pending review for suspected privilege escalation

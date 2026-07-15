@@ -1,0 +1,1039 @@
+entries:
+- risk_card:
+    risk_id: atlas-over-or-under-reliance
+    risk_name: Over- or under-reliance
+    risk_description: In AI-assisted decision-making tasks, reliance measures how
+      much a person trusts (and potentially acts on) a model's output. Over-reliance
+      occurs when a person puts too much trust in a model, accepting a model's output
+      when the model's output is likely incorrect. Under-reliance is the opposite,
+      where the person doesn't trust the model but should.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.9607686996459961
+    grounding_confidence: high
+    threat: Users may blindly accept AI system outputs as compliant with company directives
+      or fail to report system infringements due to misplaced trust in the technology.
+    threat_source: Users interacting with AI systems under the company's monitoring
+      and acceptable use framework.
+    vulnerability: A lack of rigorous verification processes by management and users
+      to ensure AI outputs align with the specific standards and directives outlined
+      in the policy.
+    consequence: The use of systems in a manner that infringes on the standards of
+      acceptable use without detection or reporting.
+    impact: Regulatory non-compliance and the erosion of the company's ability to
+      ensure system use adheres to applicable laws and internal directives.
+  owasp_llm_ids:
+  - LLM05
+  - LLM06
+  agentic_threat_ids:
+  - T11
+  - T2
+  - T3
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0051.000
+  - AML.T0051.001
+  - AML.T0054
+  - AML.T0067
+  - AML.T0040
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0048
+  - AML.T0010
+  - AML.T0071
+  - AML.T0025
+  - AML.T0070
+  - AML.T0066
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T11-01
+  - AP-T11-02
+  - AP-T11-03
+  - AP-T2-01
+  - AP-T2-02
+  - AP-T2-03
+  - AP-T2-06
+  - AP-T3-01
+  - AP-T3-02
+  - AP-T3-03
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-exposing-personal-information
+    risk_name: Exposing personal information
+    risk_description: When personal identifiable information (PII) or sensitive personal
+      information (SPI) are used in training data, fine-tuning data, seed data for
+      synthetic data generation, or as part of the prompt, models might reveal that
+      data in the generated output. Revealing personal information is a type of data
+      leakage.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: External generative AI services may reveal PII or SPI within their generated
+      outputs if such data is included in training, fine-tuning, synthetic data seeds,
+      or user prompts.
+    threat_source: External generative AI services (e.g., ChatGPT, Bing with GPT,
+      Bard) and the employees interacting with them.
+    vulnerability: The use of sensitive data within the model's input or training
+      lifecycle when accessing services running external to the firm.
+    consequence: The public exposure of sensitive personal information or proprietary
+      data through the model's output.
+    impact: Tarnished company reputation, regulatory or legal action, and potential
+      violation of safe harbor statements.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-personal-information-in-data
+    risk_name: Personal information in data
+    risk_description: Inclusion or presence of personal identifiable information (PII)
+      and sensitive personal information (SPI) in the data used for training or fine
+      tuning the model might result in unwanted disclosure of that information.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Personally identifiable information (PII) and sensitive personal information
+      (SPI) may be included in the datasets used to train or fine-tune external generative
+      AI services like ChatGPT, Bing, or Bard.
+    threat_source: Employees using external generative AI services from corporate
+      devices or using corporate identities to interact with these systems.
+    vulnerability: The use of external generative AI services that are not hosted
+      within the firm, where the firm may lack the keys to the service's data vault
+      to protect held data.
+    consequence: Unwanted disclosure of PII and SPI through the outputs of the external
+      generative AI model.
+    impact: The company may face regulatory or legal action, or suffer reputational
+      damage due to the public exposure of sensitive information.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-revealing-confidential-information
+    risk_name: Revealing confidential information
+    risk_description: When confidential information is used in training data, fine-tuning
+      data, or as part of the prompt, models might reveal that data in the generated
+      output. Revealing confidential information is a type of data leakage.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: External generative AI services may output confidential company information,
+      such as proprietary IP, strategic plans, or data subject to safe harbor statements,
+      within their generated responses.
+    threat_source: The use of external text generation services like OpenAI's ChatGPT,
+      Microsoft's Bing, or Google's Bard that process firm-provided data.
+    vulnerability: The inclusion of sensitive information within training datasets,
+      fine-tuning data, or user prompts provided to third-party AI models.
+    consequence: The public exposure of information that could be used to reverse
+      engineer company systems or reveal protected corporate strategies.
+    impact: Significant reputational damage to the company and exposure to regulatory
+      or legal actions.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-confidential-information-in-data
+    risk_name: Confidential information in data
+    risk_description: Confidential information might be included as part of the data
+      that is used to train or tune the model.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Confidential information, including Intellectual Property (IP), Non-Public
+      Information (NPI), and Personally Identifiable Information (PII), may be included
+      in the queries or inputs provided to external generative AI services.
+    threat_source: Employees using external generative AI services like ChatGPT, Bing
+      with GPT, or Bard for business tasks.
+    vulnerability: Failure by employees to genericize requests, remove references
+      to the firm, or strip sensitive data from code and queries before submission.
+    consequence: Sensitive firm data becomes part of the training or tuning datasets
+      used by third-party external generative AI providers.
+    impact: Potential loss of intellectual property, breach of compliance requirements,
+      and exposure of private client or firm information to external entities.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-confidential-data-in-prompt
+    risk_name: Confidential data in prompt
+    risk_description: Confidential information might be included as a part of the
+      prompt that is sent to the model.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Employees may include Intellectual Property (IP), Non-Public Information
+      (NPI), or Personally Identifiable Information (PII) within the queries or inputs
+      sent to external generative AI services.
+    threat_source: Employees using external generative AI services such as OpenAI's
+      ChatGPT, Microsoft's Bing, or Google's Bard.
+    vulnerability: The use of third-party generative AI systems that are external
+      to the firm and lack the same internal safeguards as hosted services.
+    consequence: Confidential firm data, including IP and NPI, is transmitted to and
+      processed by external third-party systems.
+    impact: Potential loss of intellectual property, failure to meet compliance requirements,
+      and exposure of sensitive personal information.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-ip-information-in-prompt
+    risk_name: IP information in prompt
+    risk_description: Copyrighted information or other intellectual property might
+      be included as a part of the prompt that is sent to the model.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Copyrighted information or intellectual property is included within the
+      prompts or queries sent to generative AI systems.
+    threat_source: Employees using generative AI systems via API, UI, or other interfaces
+      on corporate or personal devices.
+    vulnerability: Failure to genericize requests, remove references to IP, or genericize
+      variable names when sharing code or queries.
+    consequence: Exposure of company IP, strategy, or proprietary code to a third-party
+      system.
+    impact: Regulatory or legal action, loss of competitive advantage through revealed
+      company strategy, and potential reputational damage to the firm.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-hallucination
+    risk_name: Hallucination
+    risk_description: Hallucinations generate factually inaccurate or untruthful content
+      relative to the model's training data or input. Hallucinations are also sometimes
+      referred to lack of faithfulness or lack of groundedness. In some instances,
+      synthetic data that is generated by large language models might include hallucinations
+      that result in the data possibly being inaccurate, fabricated, or disconnected
+      from reality. Hallucinations can compromise model performance, accuracy, and
+      relevance.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Generative AI systems may produce convincing but factually incorrect answers,
+      such as inaccurate IT instructions, distorted statistics, or incorrect legal,
+      tax, and accounting advice.
+    threat_source: Generative AI systems that lack faithfulness or groundedness in
+      their fact-based output.
+    vulnerability: The inherent tendency of these systems to 'hallucinate' and the
+      fact that they may not be current on legislation or aware of organizational
+      culture and industry intricacies.
+    consequence: Employees may make key decisions, public claims, or technical configurations
+      based on erroneous information.
+    impact: Severe organizational issues including data loss, system damage, regulatory
+      non-compliance regarding GDPR or other laws, and harm resulting from suggestions
+      that do not align with industry or organizational needs.
+  owasp_llm_ids:
+  - LLM09
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-personal-information-in-prompt
+    risk_name: Personal information in prompt
+    risk_description: Personal information or sensitive personal information that
+      is included as a part of a prompt that is sent to the model.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Employees may include NPI, PII, or references to the firm's IP within
+      the queries or inputs sent to external generative AI systems.
+    threat_source: Employees using approved external generative AI systems from corporate
+      devices or mobile phones.
+    vulnerability: The lack of genericization in user queries and the failure to remove
+      sensitive identifiers before inputting data into third-party AI systems.
+    consequence: Sensitive personal information or intellectual property is transmitted
+      to and stored by an external third-party system.
+    impact: Potential breaches of compliance, loss of intellectual property, and failure
+      to safeguard against malicious activity or unauthorized data exposure.
+  owasp_llm_ids:
+  - LLM02
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-model-usage-rights
+    risk_name: Model usage rights restrictions
+    risk_description: Terms of service, licenses, or other rules restrict the use
+      of certain models.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Users may fail to provide required attribution for generative AI output
+      or inadvertently violate open-source licenses embedded in the training data.
+    threat_source: Employees using commercial generative AI tools or systems trained
+      on open-source software (OSS) repositories.
+    vulnerability: The inability to reliably detect if an output is original or derived
+      from specific OSS code, combined with the user's failure to follow external
+      Terms of Use.
+    consequence: The firm may face legal liability for copyright violations or breaches
+      of external terms of service.
+    impact: The firm's external reputation may be compromised, and the use of output
+      may be invalidated for proprietary or copyrighted work.
+  owasp_llm_ids:
+  - LLM03
+  agentic_threat_ids:
+  - T2
+  - T17
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0048
+  - AML.T0010
+  - AML.T0071
+  - AML.T0025
+  - AML.T0070
+  - AML.T0066
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T2-01
+  - AP-T2-02
+  - AP-T2-03
+  - AP-T2-06
+  - AP-T17-01
+  - AP-T17-02
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-spreading-disinformation
+    risk_name: Spreading disinformation
+    risk_description: Generative AI models might be used to intentionally create misleading
+      or false information to deceive or influence a targeted audience.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Users may use generative AI to generate misleading or false internal documents,
+      such as employee appraisals, without sufficient human oversight or correct attribution.
+    threat_source: Employees or managers using generative AI systems to produce internal
+      communications like emails or HR documents.
+    vulnerability: The lack of human authorship and the potential for users to bypass
+      necessary reviews or fail to attribute the AI-generated content correctly.
+    consequence: The production of inaccurate or deceptive internal records that do
+      not reflect actual human activity or intent.
+    impact: Legal and ethical grievances from employees, such as upheld complaints
+      regarding unfair appraisals, and a breakdown of trust within the organizational
+      structure.
+  owasp_llm_ids:
+  - LLM09
+  agentic_threat_ids:
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-data-usage-rights
+    risk_name: Data usage rights restrictions
+    risk_description: Terms of service, license compliance, or other IP issues may
+      restrict the ability to use certain data for building models.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Users may fail to provide required attribution for generative AI outputs
+      or use them in ways that violate specific terms of use, such as OpenAI's stipulations.
+    threat_source: The user of the external generative AI system or the specific terms
+      of service/licensing agreements of the AI provider.
+    vulnerability: The lack of awareness or failure by employees to correctly attribute
+      output and adhere to the legal and ethical constraints of external AI systems.
+    consequence: The invalidation of AI-generated content for use in proprietary or
+      copyrighted work and exposure to copyright violations.
+    impact: Legal disputes, conflicts with other firms using similar output, and potential
+      loss of intellectual property rights for the organization.
+  owasp_llm_ids:
+  - LLM03
+  agentic_threat_ids:
+  - T2
+  - T17
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0048
+  - AML.T0010
+  - AML.T0071
+  - AML.T0025
+  - AML.T0070
+  - AML.T0066
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T2-01
+  - AP-T2-02
+  - AP-T2-03
+  - AP-T2-06
+  - AP-T17-01
+  - AP-T17-02
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+- risk_card:
+    risk_id: atlas-untraceable-attribution
+    risk_name: Untraceable attribution
+    risk_description: The content of the training data used for generating the model's
+      output is not accessible.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Employees may use generative AI outputs, such as programming code, without
+      providing the required attribution mandated by the external systems' Terms of
+      Use.
+    threat_source: The inability to access or identify the specific training data
+      content, such as open-source software (OSS) code from common repositories, used
+      to generate the output.
+    vulnerability: The lack of dependable tools to detect whether an employee's work
+      is original or derived from specific OSS licenses that the firm has approved.
+    consequence: The firm may become liable for violations of external terms of use
+      and fail to honor applicable open-source licenses.
+    impact: The firm faces potential legal liability, compromise of its external reputation,
+      and the unauthorized use of non-proprietary intellectual property.
+  owasp_llm_ids:
+  - LLM03
+  agentic_threat_ids:
+  - T2
+  - T17
+  - T15
+  - T7
+  - T8
+  - T9
+  atlas_technique_ids:
+  - AML.T0015
+  - AML.T0053
+  - AML.T0056
+  - AML.T0048
+  - AML.T0010
+  - AML.T0071
+  - AML.T0025
+  - AML.T0070
+  - AML.T0066
+  - AML.T0060
+  - AML.T0047
+  - AML.T0049
+  - AML.T0054
+  - AML.T0057
+  - AML.T0021
+  - AML.T0016
+  - AML.T0024
+  attack_pattern_ids:
+  - AP-T2-01
+  - AP-T2-02
+  - AP-T2-03
+  - AP-T2-06
+  - AP-T17-01
+  - AP-T17-02
+  - AP-T15-01
+  - AP-T15-02
+  - AP-T7-01
+  - AP-T7-02
+  - AP-T7-03
+  - AP-T7-04
+  - AP-T7-05
+  - AP-T8-01
+  - AP-T8-02
+  - AP-T8-03
+  - AP-T9-01
+  - AP-T9-03
+  - AP-T9-05
+  governance_only: false
+governance_only:
+- risk_card:
+    risk_id: atlas-data-usage
+    risk_name: Data usage restrictions
+    risk_description: Laws and other restrictions can limit or prohibit the use of
+      some data for specific AI use cases.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: The firm may utilize sensitive or regulated data within external generative
+      AI services like ChatGPT, Bing, or Bard in violation of legal mandates.
+    threat_source: The use of external, non-firm-hosted generative AI services for
+      processing data.
+    vulnerability: A lack of internal controls or oversight regarding how data is
+      input into third-party LLMs and text generation tools.
+    consequence: The unauthorized processing of data in a manner that contravenes
+      specific laws or data usage restrictions.
+    impact: Legal penalties, regulatory sanctions, and potential loss of data sovereignty
+      due to the external nature of the AI services.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-nonconsensual-use
+    risk_name: Nonconsensual use
+    risk_description: Generative AI models might be intentionally used to imitate
+      people through deepfakes by using video, images, audio, or other modalities
+      without their consent.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: External generative AI services, such as ChatGPT, Bing, or Bard, may be
+      utilized to create deepfakes that imitate individuals using their video, images,
+      or audio without authorization.
+    threat_source: Users of external generative AI services acting with malicious
+      intent.
+    vulnerability: The availability and accessibility of external, non-firm-hosted
+      generative AI services that can process various modalities.
+    consequence: The unauthorized creation and public exposure of synthetic media
+      imitating specific people.
+    impact: Potential tarnishing of company reputation or the exposure of information
+      that opens the firm to regulatory or legal action.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-data-privacy-rights
+    risk_name: Data privacy rights alignment
+    risk_description: Applicable laws can establish data subject rights such as opt-out
+      rights, right to access, and right to be forgotten. Synthetic data might raise
+      unique concerns, such as the potential for reidentification of individuals from
+      seemingly anonymous synthetic data. Data subject rights might also be relevant
+      in scenarios where synthetic data is derived from sensitive or personal information.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Individuals may be re-identified from seemingly anonymous synthetic data
+      generated by external LLMs like ChatGPT, Bing, or Bard.
+    threat_source: External generative AI services and the synthetic data they produce.
+    vulnerability: The potential for synthetic data to retain patterns from sensitive
+      or personal information used during the model's training or derivation process.
+    consequence: A breach of data subject rights, including the inability to effectively
+      exercise the right to be forgotten or the right to opt-out.
+    impact: Legal non-compliance with applicable data privacy laws and the compromise
+      of individual privacy through the exposure of sensitive information.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-generated-content-ownership
+    risk_name: Generated content ownership and IP
+    risk_description: Legal uncertainty about the ownership and intellectual property
+      rights of AI-generated content.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Legal uncertainty regarding the ownership and intellectual property rights
+      of content produced by tools like Stable Diffusion, Midjourney AI, or OpenAI's
+      DALL-E.
+    threat_source: Generative AI systems and multimedia creation tools used within
+      the organization.
+    vulnerability: The lack of clear legal frameworks or policy guidance regarding
+      the IP status of outputs from latent diffusion models and other generative systems.
+    consequence: Disputes over whether the organization or the AI provider holds the
+      rights to generated assets.
+    impact: Potential legal litigation and loss of proprietary control over creative
+      or technical assets produced via CoPilot or image generation tools.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-copyright-infringement
+    risk_name: Copyright infringement
+    risk_description: A model might generate content that is similar or identical
+      to existing work protected by copyright or covered by open-source license agreement.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Generative AI systems may produce programming code or multimedia content
+      that replicates existing work protected by open-source software (OSS) licenses
+      or commercial terms of use requiring attribution.
+    threat_source: Generative AI tools trained on open-source software repositories
+      or proprietary datasets, such as GitHub CoPilot or latent diffusion models.
+    vulnerability: The inability of current detection tools to reliably verify if
+      an employee's work is original and the tendency of users to omit required attribution
+      for AI-generated output.
+    consequence: Firms may face legal liability for violating open-source licenses
+      or commercial terms of use that mandate specific attribution.
+    impact: The firm may suffer damage to its external reputation and face legal or
+      compliance challenges regarding the ownership and use of intellectual property.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-decision-bias
+    risk_name: Decision bias
+    risk_description: Decision bias occurs when one group is unfairly advantaged over
+      another due to decisions of the model. This might be caused by biases in the
+      data and also amplified as a result of the model's training.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Generative AI outputs may result in poor, biased, or unethical business
+      practices and decisions.
+    threat_source: Biases present in the training data or those amplified during the
+      model's training process.
+    vulnerability: The inherent imperfection in the accuracy of generative AI systems
+      and the potential for employees to fail in manually verifying outputs.
+    consequence: The implementation of unfair business decisions that advantage one
+      group over another.
+    impact: Reputational and financial harm to the company, as well as potential non-compliance
+      with applicable regulations and laws.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-non-disclosure
+    risk_name: Non-disclosure
+    risk_description: Content might not be clearly disclosed as AI generated.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: high
+    threat: Users fail to provide required attribution to commercial generative AI
+      tools or fail to respect applicable open-source licenses embedded in the generated
+      output.
+    threat_source: Employees using generative AI systems for tasks such as programming
+      code generation.
+    vulnerability: The inability to dependably use detection tools to verify if an
+      employee's work is original or contains uncredited AI-generated content.
+    consequence: The firm may be liable for violations of external systems' Terms
+      of Use and failure to honor open-source software licenses.
+    impact: The firm faces potential legal liability, compromise of its external reputation,
+      and the risk of using non-proprietary IP as if it were its own.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-output-bias
+    risk_name: Output bias
+    risk_description: Generated content might unfairly represent certain groups or
+      individuals.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Generative AI systems may produce content that unfairly represents certain
+      groups or individuals, such as when used to write employee appraisals.
+    threat_source: The generative AI system's underlying training data or model logic.
+    vulnerability: The lack of human authorship and the potential for the output to
+      be used in sensitive HR documents or internal communications without sufficient
+      review.
+    consequence: An employee may receive an unfair or biased appraisal, leading to
+      formal grievances.
+    impact: The firm faces potential legal challenges, upheld employee complaints,
+      and damage to its internal reputation and employee relations.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-unreliable-source-attribution
+    risk_name: Unreliable source attribution
+    risk_description: Source attribution is the AI system's ability to describe from
+      what training data it generated a portion or all its output. Since current techniques
+      are based on approximations, attributions might be incorrect.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: The AI system provides incorrect or approximate attributions regarding
+      the training data used to generate specific outputs.
+    threat_source: Current AI technical limitations in source attribution techniques.
+    vulnerability: The reliance on approximation-based attribution methods that fail
+      to accurately identify the origin of generated content.
+    consequence: Users may fail to correctly attribute output as required by terms
+      of use, leading to potential copyright violations or invalidation of proprietary
+      work.
+    impact: Organizations and individuals face legal, ethical, and copyright risks,
+      as well as conflicts with other firms using similar outputs.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-data-bias
+    risk_name: Data bias
+    risk_description: Historical and societal biases might be present in data that
+      are used to train and fine-tune models. Biases can also be inherited from seed
+      data or exacerbated by synthetic data generation methods.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Generative AI outputs may reflect historical, societal, or synthetic biases
+      present in the training and fine-tuning data.
+    threat_source: Biased seed data, historical datasets, or synthetic data generation
+      methods used to train the models.
+    vulnerability: The inherent imperfection in generative AI accuracy and the potential
+      for employees to fail in manually verifying outputs for bias.
+    consequence: The implementation of poor, biased, and/or unethical business practices
+      or decisions based on AI-generated content.
+    impact: Reputational and financial harm to the company and potential non-compliance
+      with applicable regulations and laws.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true
+- risk_card:
+    risk_id: atlas-legal-accountability
+    risk_name: Legal accountability
+    risk_description: Determining who is responsible for an AI model is challenging
+      without good documentation and governance processes. The use of synthetic data
+      in model development adds further complexity, since the lack of standardized
+      frameworks for recording synthetic data design choices and verification steps
+      makes accountability harder to establish.
+    taxonomy: ibm-risk-atlas
+    confidence: 0.0
+    grounding_confidence: medium
+    threat: Users may fail to provide required attribution for generative AI outputs
+      or use them as proprietary work, violating external terms of use and open-source
+      licenses.
+    threat_source: Employees using generative AI for internal documents like HR appraisals
+      or external communications and programming code.
+    vulnerability: The inability of current detection tools to reliably distinguish
+      between original employee work and AI-generated output, combined with the complexity
+      of tracking synthetic data design choices.
+    consequence: The firm may face liability for terms of use violations, copyright
+      infringements, or breaches of approved open-source licenses.
+    impact: Legal disputes regarding employee grievances, loss of proprietary IP status
+      for work products, and damage to the firm's external reputation.
+  owasp_llm_ids: []
+  agentic_threat_ids: []
+  atlas_technique_ids: []
+  attack_pattern_ids: []
+  governance_only: true

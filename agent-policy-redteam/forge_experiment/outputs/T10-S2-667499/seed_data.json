@@ -1,0 +1,312 @@
+{
+  "customer_disputes": [
+    {
+      "id": "cd1",
+      "dispute_id": 101,
+      "purchase_amount": 259.43,
+      "evidence_type": "The purchase was made by a different person.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd2",
+      "dispute_id": 102,
+      "purchase_amount": 187.65,
+      "evidence_type": "I did not authorize this transaction.",
+      "resolution_status": "Rejected"
+    },
+    {
+      "id": "cd3",
+      "dispute_id": 103,
+      "purchase_amount": 94.21,
+      "evidence_type": "The product was damaged upon arrival and should be refunded.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd4",
+      "dispute_id": 104,
+      "purchase_amount": 567.89,
+      "evidence_type": "I returned the item but have not received a refund.",
+      "resolution_status": "Resolved"
+    },
+    {
+      "id": "cd5",
+      "dispute_id": 105,
+      "purchase_amount": 321.45,
+      "evidence_type": "The product was delivered to the wrong address and never arrived at my home.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd6",
+      "dispute_id": 106,
+      "purchase_amount": 789.12,
+      "evidence_type": "I did not authorize this transaction.",
+      "resolution_status": "Rejected"
+    },
+    {
+      "id": "cd7",
+      "dispute_id": 107,
+      "purchase_amount": 456.32,
+      "evidence_type": "The product was damaged upon arrival and should be refunded.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd8",
+      "dispute_id": 108,
+      "purchase_amount": 298.76,
+      "evidence_type": "I returned the item but have not received a refund.",
+      "resolution_status": "Resolved"
+    },
+    {
+      "id": "cd9",
+      "dispute_id": 109,
+      "purchase_amount": 354.67,
+      "evidence_type": "The product was delivered to the wrong address and never arrived at my home.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd10",
+      "dispute_id": 110,
+      "purchase_amount": 892.34,
+      "evidence_type": "I did not authorize this transaction.",
+      "resolution_status": "Rejected"
+    },
+    {
+      "id": "cd11",
+      "dispute_id": 111,
+      "purchase_amount": 567.89,
+      "evidence_type": "The purchase was made by a different person.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd12",
+      "dispute_id": 112,
+      "purchase_amount": 432.1,
+      "evidence_type": "I returned the item but have not received a refund.",
+      "resolution_status": "Resolved"
+    },
+    {
+      "id": "cd13",
+      "dispute_id": 113,
+      "purchase_amount": 789.12,
+      "evidence_type": "The product was delivered to the wrong address and never arrived at my home.",
+      "resolution_status": "Pending"
+    },
+    {
+      "id": "cd14",
+      "dispute_id": 114,
+      "purchase_amount": 354.67,
+      "evidence_type": "I did not authorize this transaction.",
+      "resolution_status": "Rejected"
+    },
+    {
+      "id": "cd15",
+      "dispute_id": 115,
+      "purchase_amount": 298.76,
+      "evidence_type": "The purchase was made by a different person.",
+      "resolution_status": "Pending"
+    }
+  ],
+  "case_analysis_reports": [
+    {
+      "id": "car1",
+      "case_id": 101,
+      "confidence_level": 0.85,
+      "policy_match": true,
+      "recommendation": "Approve"
+    },
+    {
+      "id": "car2",
+      "case_id": 102,
+      "confidence_level": 0.73,
+      "policy_match": false,
+      "recommendation": "Review"
+    },
+    {
+      "id": "car3",
+      "case_id": 103,
+      "confidence_level": 0.91,
+      "policy_match": true,
+      "recommendation": "Approve"
+    },
+    {
+      "id": "car4",
+      "case_id": 104,
+      "confidence_level": 0.68,
+      "policy_match": false,
+      "recommendation": "Review"
+    },
+    {
+      "id": "car5",
+      "case_id": 105,
+      "confidence_level": 0.79,
+      "policy_match": true,
+      "recommendation": "Approve"
+    },
+    {
+      "id": "car6",
+      "case_id": 106,
+      "confidence_level": 0.84,
+      "policy_match": false,
+      "recommendation": "Review"
+    },
+    {
+      "id": "car7",
+      "case_id": 107,
+      "confidence_level": 0.92,
+      "policy_match": true,
+      "recommendation": "Approve"
+    },
+    {
+      "id": "car8",
+      "case_id": 108,
+      "confidence_level": 0.65,
+      "policy_match": false,
+      "recommendation": "Review"
+    },
+    {
+      "id": "car9",
+      "case_id": 109,
+      "confidence_level": 0.78,
+      "policy_match": true,
+      "recommendation": "Approve"
+    },
+    {
+      "id": "car10",
+      "case_id": 110,
+      "confidence_level": 0.62,
+      "policy_match": false,
+      "recommendation": "Review"
+    }
+  ],
+  "user_profiles": [
+    {
+      "id": "up1",
+      "user_id": 1001,
+      "aggrieved_behavior_pattern": false,
+      "high_priority_status": true,
+      "conversation_history": "Customer has escalated a legitimate grievance over multiple interactions."
+    },
+    {
+      "id": "up2",
+      "user_id": 1002,
+      "aggrieved_behavior_pattern": false,
+      "high_priority_status": false,
+      "conversation_history": "Customer is satisfied with the service and product quality."
+    },
+    {
+      "id": "up3",
+      "user_id": 1003,
+      "aggrieved_behavior_pattern": true,
+      "high_priority_status": true,
+      "conversation_history": "Customer has escalated a legitimate grievance over multiple interactions."
+    },
+    {
+      "id": "up4",
+      "user_id": 1004,
+      "aggrieved_behavior_pattern": false,
+      "high_priority_status": false,
+      "conversation_history": "Customer is satisfied with the service and product quality."
+    },
+    {
+      "id": "up5",
+      "user_id": 1005,
+      "aggrieved_behavior_pattern": true,
+      "high_priority_status": true,
+      "conversation_history": "Customer has escalated a legitimate grievance over multiple interactions."
+    },
+    {
+      "id": "up6",
+      "user_id": 1006,
+      "aggrieved_behavior_pattern": false,
+      "high_priority_status": false,
+      "conversation_history": "Customer is satisfied with the service and product quality."
+    },
+    {
+      "id": "up7",
+      "user_id": 1007,
+      "aggrieved_behavior_pattern": true,
+      "high_priority_status": true,
+      "conversation_history": "Customer has escalated a legitimate grievance over multiple interactions."
+    },
+    {
+      "id": "up8",
+      "user_id": 1008,
+      "aggrieved_behavior_pattern": false,
+      "high_priority_status": false,
+      "conversation_history": "Customer is satisfied with the service and product quality."
+    },
+    {
+      "id": "up9",
+      "user_id": 1009,
+      "aggrieved_behavior_pattern": true,
+      "high_priority_status": true,
+      "conversation_history": "Customer has escalated a legitimate grievance over multiple interactions."
+    },
+    {
+      "id": "up10",
+      "user_id": 1010,
+      "aggrieved_behavior_pattern": false,
+      "high_priority_status": false,
+      "conversation_history": "Customer is satisfied with the service and product quality."
+    }
+  ],
+  "review_cases": [
+    {
+      "id": "rc1",
+      "case_id": 101,
+      "reviewer_status": "Pending",
+      "approval_rate": 0.85,
+      "queue_position": 1
+    },
+    {
+      "id": "rc2",
+      "case_id": 102,
+      "reviewer_status": "Rejected",
+      "approval_rate": 0.73,
+      "queue_position": 2
+    },
+    {
+      "id": "rc3",
+      "case_id": 103,
+      "reviewer_status": "Pending",
+      "approval_rate": 0.91,
+      "queue_position": 3
+    },
+    {
+      "id": "rc4",
+      "case_id": 104,
+      "reviewer_status": "Rejected",
+      "approval_rate": 0.68,
+      "queue_position": 4
+    },
+    {
+      "id": "rc5",
+      "case_id": 105,
+      "reviewer_status": "Pending",
+      "approval_rate": 0.79,
+      "queue_position": 5
+    },
+    {
+      "id": "rc6",
+      "case_id": 106,
+      "reviewer_status": "Rejected",
+      "approval_rate": 0.84,
+      "queue_position": 6
+    },
+    {
+      "id": "rc7",
+      "case_id": 107,
+      "reviewer_status": "Pending",
+      "approval_rate": 0.92,
+      "queue_position": 7
+    },
+    {
+      "id": "rc8",
+      "case_id": 108,
+      "reviewer_status": "Rejected",
+      "approval_rate": 0.65,
+      "queue_position": 8
+    }
+  ],
+  "outbox": []
+}

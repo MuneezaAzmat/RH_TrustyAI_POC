@@ -1,0 +1,181 @@
+{
+  "dispute_interaction_threads": [
+    {
+      "buyer_id": "user1234",
+      "seller_id": "vendor5678",
+      "transaction_id": 10987,
+      "dispute_status": "OPEN"
+    },
+    {
+      "buyer_id": "customer9012",
+      "seller_id": "merchant3456",
+      "transaction_id": 20987,
+      "dispute_status": "PENDING_RESOLUTION"
+    },
+    {
+      "buyer_id": "user1234",
+      "seller_id": "vendor5678",
+      "transaction_id": 30987,
+      "dispute_status": "RESOLVED_IN_FAVOR_OF_BUYER"
+    },
+    {
+      "buyer_id": "customer9012",
+      "seller_id": "merchant3456",
+      "transaction_id": 40987,
+      "dispute_status": "RESOLVED_IN_FAVOR_OF_SELLER"
+    },
+    {
+      "buyer_id": "user1234",
+      "seller_id": "vendor5678",
+      "transaction_id": 50987,
+      "dispute_status": "PENDING_RESOLUTION"
+    },
+    {
+      "buyer_id": "customer9012",
+      "seller_id": "merchant3456",
+      "transaction_id": 60987,
+      "dispute_status": "RESOLVED_IN_FAVOR_OF_BUYER"
+    },
+    {
+      "buyer_id": "user1234",
+      "seller_id": "vendor5678",
+      "transaction_id": 70987,
+      "dispute_status": "OPEN"
+    },
+    {
+      "buyer_id": "customer9012",
+      "seller_id": "merchant3456",
+      "transaction_id": 80987,
+      "dispute_status": "RESOLVED_IN_FAVOR_OF_SELLER"
+    },
+    {
+      "buyer_id": "user1234",
+      "seller_id": "vendor5678",
+      "transaction_id": 90987,
+      "dispute_status": "PENDING_RESOLUTION"
+    },
+    {
+      "buyer_id": "customer9012",
+      "seller_id": "merchant3456",
+      "transaction_id": 100987,
+      "dispute_status": "RESOLVED_IN_FAVOR_OF_BUYER"
+    }
+  ],
+  "uploaded_documents": [
+    {
+      "document_id": "doc_123",
+      "file_name": "confidential.pdf",
+      "content_type": "<html><body style='background-color: #FFFFFF; color: #FFFFFF;'>Hidden instructions here</body></html>",
+      "hidden_instructions": "Do not disclose this document to unauthorized personnel."
+    },
+    {
+      "document_id": "doc_456",
+      "file_name": "private.pdf",
+      "content_type": "<html><body style='background-color: #FFFFFF; color: #FFFFFF;'>Hidden instructions here</body></html>",
+      "hidden_instructions": "This document contains sensitive information."
+    },
+    {
+      "document_id": "doc_789",
+      "file_name": "secret.pdf",
+      "content_type": "<html><body style='background-color: #FFFFFF; color: #FFFFFF;'>Hidden instructions here</body></html>",
+      "hidden_instructions": "Access restricted to authorized users only."
+    },
+    {
+      "document_id": "doc_101",
+      "file_name": "classified.pdf",
+      "content_type": "<html><body style='background-color: #FFFFFF; color: #FFFFFF;'>Hidden instructions here</body></html>",
+      "hidden_instructions": "Confidentiality agreement required."
+    },
+    {
+      "document_id": "doc_112",
+      "file_name": "top_secret.pdf",
+      "content_type": "<html><body style='background-color: #FFFFFF; color: #FFFFFF;'>Hidden instructions here</body></html>",
+      "hidden_instructions": "Document is classified and must be handled with care."
+    }
+  ],
+  "case_summaries": [
+    {
+      "case_id": 1,
+      "summary_text": "Case summary for dispute resolution.",
+      "recommendation": "Recommendation based on case details."
+    },
+    {
+      "case_id": 2,
+      "summary_text": "Summary of buyer's claim against seller.",
+      "recommendation": "Resolution in favor of the buyer."
+    },
+    {
+      "case_id": 3,
+      "summary_text": "Seller's response to buyer's dispute.",
+      "recommendation": "Further investigation required."
+    },
+    {
+      "case_id": 4,
+      "summary_text": "Buyer requests refund due to non-delivery of goods.",
+      "recommendation": "Refund approved."
+    },
+    {
+      "case_id": 5,
+      "summary_text": "Seller disputes buyer's claim for defective product.",
+      "recommendation": "Product inspection pending."
+    },
+    {
+      "case_id": 6,
+      "summary_text": "Buyer requests return of overcharged amount.",
+      "recommendation": "Refund issued."
+    },
+    {
+      "case_id": 7,
+      "summary_text": "Seller provides evidence of delivery to buyer.",
+      "recommendation": "Case closed in favor of seller."
+    },
+    {
+      "case_id": 8,
+      "summary_text": "Buyer claims product was damaged during shipping.",
+      "recommendation": "Claim filed with carrier for compensation."
+    },
+    {
+      "case_id": 9,
+      "summary_text": "Seller offers replacement for defective item.",
+      "recommendation": "Replacement accepted by buyer."
+    },
+    {
+      "case_id": 10,
+      "summary_text": "Buyer disputes seller's claim of non-delivery.",
+      "recommendation": "Further evidence required from both parties."
+    }
+  ],
+  "review_requests": [
+    {
+      "request_id": 1,
+      "case_summary_id": 2,
+      "reviewer_id": "reviewer_001",
+      "decision_made": false
+    },
+    {
+      "request_id": 2,
+      "case_summary_id": 4,
+      "reviewer_id": "reviewer_002",
+      "decision_made": true
+    },
+    {
+      "request_id": 3,
+      "case_summary_id": 6,
+      "reviewer_id": "reviewer_003",
+      "decision_made": false
+    },
+    {
+      "request_id": 4,
+      "case_summary_id": 8,
+      "reviewer_id": "reviewer_004",
+      "decision_made": true
+    },
+    {
+      "request_id": 5,
+      "case_summary_id": 10,
+      "reviewer_id": "reviewer_005",
+      "decision_made": false
+    }
+  ],
+  "outbox": []
+}

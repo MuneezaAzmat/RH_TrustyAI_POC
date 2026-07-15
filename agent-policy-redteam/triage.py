@@ -1,6 +1,11 @@
 """Risk triage logic for classifying enforcement levels and risk types."""
 
+import logging
+
 from models import RiskCard, TriagedRisk
+from scenario_filter import is_volume_attack_risk_card
+
+log = logging.getLogger(__name__)
 
 
 def triage_risk(risk_card: RiskCard) -> TriagedRisk:
@@ -60,3 +65,19 @@ def triage_risk(risk_card: RiskCard) -> TriagedRisk:
 def filter_agent_level(risks: list[TriagedRisk]) -> list[TriagedRisk]:
     """Filter to only agent-level risks (sandbox-level deferred)."""
     return [risk for risk in risks if risk.enforcement_level == "agent"]
+
+
+def filter_scenario_feasible(risks: list[TriagedRisk]) -> list[TriagedRisk]:
+    """Drop volume/DDoS/overwhelm risks that need impractically large synthetic envs."""
+    feasible: list[TriagedRisk] = []
+    for risk in risks:
+        reason = is_volume_attack_risk_card(risk.risk_card)
+        if reason:
+            log.warning(
+                "Skipping %s — volume/DDoS/overwhelm attack (%s)",
+                risk.risk_card.id,
+                reason,
+            )
+            continue
+        feasible.append(risk)
+    return feasible

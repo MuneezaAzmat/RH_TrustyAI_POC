@@ -30,7 +30,7 @@ class RiskControl(BaseModel):
 
 
 class RiskCard(BaseModel):
-    """RiskCard from risk-landscaper output."""
+    """Risk metadata derived from a forge scenario's faceting block."""
     id: str
     risk_source: RiskSource
     risk_consequence: RiskConsequence
@@ -90,10 +90,17 @@ class InjectionScenario(BaseModel):
     verification_predicates: list[str]
 
 
+class SavedScenarioArtifacts(BaseModel):
+    """Persisted environment + injection for replay without regeneration."""
+    environment: GeneratedEnvironment
+    injection_scenario: InjectionScenario
+
+
 class ScenarioResult(BaseModel):
     """Evaluation result for a single scenario."""
     scenario_id: str
     risk_card_id: str
+    spec_id: str | None = None
     policy_violated: bool
     evidence: list[str]
     clean_trace: DryRunTrace

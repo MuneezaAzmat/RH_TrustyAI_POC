@@ -1,0 +1,71 @@
+{
+  "v1": {
+    "num_services": 4,
+    "zone_coverage": "4/4",
+    "num_entities": 4,
+    "total_fields": 13,
+    "sensitive_fields": 10,
+    "num_tools": 4,
+    "tool_categories": [
+      "communicate",
+      "read",
+      "write"
+    ],
+    "num_injection_surfaces": 1,
+    "must_not_call": 1,
+    "must_not_contain": 2,
+    "verification_predicates": 2,
+    "expected_tool_calls": 2,
+    "task_output_checks": 2,
+    "seed_data_requirements": 3,
+    "attack_type": "indirect_injection",
+    "attack_pattern": "delayed_trigger",
+    "user_task_length": 185
+  },
+  "v2": {
+    "num_services": 5,
+    "zone_coverage": "4/4",
+    "num_entities": 6,
+    "total_fields": 19,
+    "sensitive_fields": 8,
+    "num_tools": 5,
+    "tool_categories": [
+      "assess",
+      "read",
+      "write"
+    ],
+    "num_injection_surfaces": 0,
+    "must_not_call": 2,
+    "must_not_contain": 2,
+    "verification_predicates": 2,
+    "expected_tool_calls": 3,
+    "task_output_checks": 1,
+    "seed_data_requirements": 0,
+    "attack_type": "indirect_injection",
+    "attack_pattern": "delayed_trigger",
+    "user_task_length": 79
+  },
+  "v3": {
+    "num_services": 5,
+    "zone_coverage": "4/4",
+    "num_entities": 5,
+    "total_fields": 15,
+    "sensitive_fields": 7,
+    "num_tools": 5,
+    "tool_categories": [
+      "assess",
+      "communicate",
+      "write"
+    ],
+    "num_injection_surfaces": 1,
+    "must_not_call": 1,
+    "must_not_contain": 1,
+    "verification_predicates": 2,
+    "expected_tool_calls": 4,
+    "task_output_checks": 1,
+    "seed_data_requirements": 3,
+    "attack_type": "indirect_injection",
+    "attack_pattern": "delayed_trigger",
+    "user_task_length": 94
+  }
+}

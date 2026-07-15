@@ -1,0 +1,179 @@
+evaluation:
+  output_dir: output/klarna-fs-isac-v2
+  scenario_count: 25
+  feature_file_count: 25
+  consistency:
+    mean: 0.9956
+    stddev: 0.0222
+    per_scenario:
+      AP-T11-01-c7cd1e:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T11-02-04e0cb:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T11-03-415b25:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T15-01-832854:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T15-02-9df512:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T17-01-00d278:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 0.6667
+      AP-T17-02-8e8e3e:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T2-01-28712e:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T2-02-3f1185:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T2-03-7108ff:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T2-06-85bd56:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T3-01-b25bf4:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T3-02-dfa616:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T3-03-2a9d1e:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T7-01-44b787:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T7-02-8f1884:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T7-03-f2bbd2:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T7-04-506268:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T7-05-bf1181:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T8-01-3705fa:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T8-02-ad9ade:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T8-03-ccf918:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T9-01-8c5d51:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T9-03-d0fd53:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+      AP-T9-05-35c032:
+        zone_alignment: 1.0
+        entry_point_agreement: 1
+        step_node_correspondence: 1.0
+  gherkin:
+    parse_success_rate: 1.0
+    mean_step_count: 10.16
+    tag_consistency:
+      inconsistent_groups: 0
+      details: []
+    background_missing_warnings: []
+  grounding:
+    threat_id_validity: 1.0
+    dangling_references: 0
+    technique_id_grounding: 1.0
+    ungrounded_technique_references: 0
+  technique_agreement:
+    mean_technique_agreement: 0.94
+    per_scenario:
+      AP-T17-01-00d278:
+        technique_agreement: 0.5
+        narrative_techniques:
+        - AML.T0010
+        - AML.T0048
+        tree_techniques:
+        - AML.T0048
+        spec_techniques:
+        - AML.T0010
+        - AML.T0048
+        missing_from_tree:
+        - AML.T0010
+      AP-T17-02-8e8e3e:
+        technique_agreement: 0.5
+        narrative_techniques:
+        - AML.T0010
+        - AML.T0048
+        tree_techniques:
+        - AML.T0048
+        spec_techniques:
+        - AML.T0010
+        - AML.T0048
+        missing_from_tree:
+        - AML.T0010
+      AP-T9-05-35c032:
+        technique_agreement: 0.5
+        narrative_techniques:
+        - AML.T0016
+        - AML.T0024
+        tree_techniques:
+        - AML.T0024
+        spec_techniques:
+        - AML.T0016
+        - AML.T0024
+        missing_from_tree:
+        - AML.T0016
+  diversity:
+    entry_point_entropy:
+      entropy: 0.8783
+      entry_point_coverage: 1.0
+    zone_coverage:
+      raw_coverage: 0.6
+      active_zone_coverage: 1.0
+      out_of_scope_zone_violations: []
+    actor_type_entropy: 0.9945
+    capability_level_evenness: 0.9893
+    title_uniqueness: 0.5455
+  plausibility:
+    capability_complexity_violation_count: 3
+    per_scenario:
+      AP-T15-02-9df512:
+      - novice actor has high attack_complexity
+      AP-T2-02-3f1185:
+      - novice actor has high attack_complexity
+      AP-T7-02-8f1884:
+      - novice actor has high attack_complexity
