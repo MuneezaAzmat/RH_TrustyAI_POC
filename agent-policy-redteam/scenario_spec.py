@@ -69,8 +69,29 @@ class DomainSkeleton(BaseModel):
     seed_data_constraints: list[str] = Field(default_factory=list)
 
 
+# Framework-facing attack placement / observation (shared across Garak, AgentDojo, …)
+InjectionSurface = Literal[
+    "user_turn",
+    "system_prompt",
+    "tool_return",
+    "tool_definition",
+    "none",
+]
+OracleTarget = Literal[
+    "forbidden_call",
+    "output_string",
+    "wrong_target",
+    "state_vs_log",
+    "cross_turn",
+]
+
+
 class ScenarioSpec(BaseModel):
-    """Complete upfront specification for a red-team scenario."""
+    """Shared scenario specification: forge YAML → one spec → framework artifacts.
+
+    Deterministically derived (no LLM). Downstream emitters (pipeline env,
+    Garak configs, …) consume this object.
+    """
 
     spec_id: str
     risk_card_id: str
@@ -81,6 +102,29 @@ class ScenarioSpec(BaseModel):
     security_criteria: SecurityCriteria
     utility_criteria: UtilityCriteria
     domain_skeleton: DomainSkeleton
+
+    # Identity / taxonomy (from forge scenario_seed_metadata + faceting)
+    seed_id: str = ""
+    threat_id: str = ""
+    mechanism_name: str = ""
+    tags: list[str] = Field(default_factory=list)
+
+    # Where the attack sits and how success is observed (for gating + emitters)
+    injection_surface: InjectionSurface = "none"
+    oracle_target: OracleTarget = "forbidden_call"
+
+    # Behavior-spec excerpts (Given / Then) for seed + detection hints
+    seed_facts: list[str] = Field(default_factory=list)
+    oracle_narrative_predicates: list[str] = Field(default_factory=list)
+    payload_intent: str = ""
+
+    @property
+    def scenario_id(self) -> str:
+        return self.risk_card_id
+
+    @property
+    def tool_names(self) -> list[str]:
+        return [t.name for t in self.domain_skeleton.required_tools]
 
     @model_validator(mode="after")
     def validate_internal_consistency(self) -> "ScenarioSpec":
@@ -125,4 +169,6 @@ def validate_scenario_spec(spec: ScenarioSpec) -> list[str]:
         )
     if not spec.security_criteria.verification_predicates:
         warnings.append("security_criteria.verification_predicates is empty")
+    if spec.injection_surface == "none":
+        warnings.append("injection_surface is unclassified (none)")
     return warnings

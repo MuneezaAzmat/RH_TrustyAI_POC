@@ -11,12 +11,20 @@ from pathlib import Path
 import yaml
 
 from models import RiskCard, RiskConsequence, RiskControl, RiskImpact, RiskSource, TriagedRisk
+from attack_library import (
+    DEFAULT_VARIANTS,
+    list_patterns,
+    list_variants,
+    resolve_library_payloads,
+)
 from scenario_filter import detect_volume_attack_text
 from scenario_spec import (
     DomainSkeleton,
     EntityFieldSpec,
     EntitySpec,
     InjectionSpec,
+    InjectionSurface,
+    OracleTarget,
     PayloadTemplate,
     ScenarioSpec,
     SecurityCriteria,
@@ -73,6 +81,73 @@ _SURFACE_HINTS: list[tuple[str, str]] = [
 ]
 
 _PROGRESSIVE_ROLES = ("premise", "reinforce", "trigger")
+
+# Surface / oracle classification by forge seed_id (exact, then threat prefix).
+_CLASSIFICATION: dict[str, tuple[InjectionSurface, OracleTarget]] = {
+    "AP-T2": ("user_turn", "forbidden_call"),
+    "AP-T3": ("user_turn", "forbidden_call"),
+    "AP-T7-01": ("user_turn", "forbidden_call"),
+    "AP-T7-02": ("tool_return", "forbidden_call"),
+    "AP-T7-03": ("tool_return", "forbidden_call"),
+    "AP-T7-04": ("tool_return", "forbidden_call"),
+    "AP-T7-05": ("tool_return", "forbidden_call"),
+    "AP-T8": ("user_turn", "state_vs_log"),
+    "AP-T9": ("tool_return", "wrong_target"),
+    "AP-T11-01": ("user_turn", "forbidden_call"),
+    "AP-T11-02": ("tool_return", "forbidden_call"),
+    "AP-T11-03": ("user_turn", "forbidden_call"),
+    "AP-T15-01": ("user_turn", "output_string"),
+    "AP-T15-02": ("tool_return", "output_string"),
+    "AP-T17-01": ("system_prompt", "forbidden_call"),
+    "AP-T17-02": ("tool_definition", "forbidden_call"),
+}
+
+
+def _lookup_surface_oracle(seed_id: str) -> tuple[InjectionSurface, OracleTarget]:
+    if seed_id in _CLASSIFICATION:
+        return _CLASSIFICATION[seed_id]
+    prefix = "-".join(seed_id.split("-")[:2])
+    if prefix in _CLASSIFICATION:
+        return _CLASSIFICATION[prefix]
+    log.warning("Unknown seed_id %s — defaulting surface=none", seed_id)
+    return ("none", "forbidden_call")
+
+
+def _parse_behavior_spec(raw: str) -> tuple[list[str], list[str]]:
+    """Extract seed_facts (Given) and oracle narrative predicates (Then/But/*)."""
+    given: list[str] = []
+    then: list[str] = []
+    in_scenario = False
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("Scenario:"):
+            in_scenario = True
+            continue
+        if not in_scenario:
+            continue
+        if stripped.startswith("Given "):
+            given.append(stripped[6:].strip())
+        elif stripped.startswith("And ") and not then:
+            given.append(stripped[4:].strip())
+        elif stripped.startswith("Then "):
+            then.append(stripped[5:].strip())
+        elif stripped.startswith("But "):
+            then.append(stripped[4:].strip())
+        elif stripped.startswith("* "):
+            then.append(stripped[2:].strip())
+        elif stripped.startswith("And ") and then:
+            then.append(stripped[4:].strip())
+    return given, then
+
+
+def _collect_tags(scenario: dict) -> list[str]:
+    faceting = scenario.get("faceting") or {}
+    taxonomy = faceting.get("taxonomy_chain") or {}
+    tags: list[str] = []
+    for key in ("owasp_llm_ids", "atlas_technique_ids", "agentic_threat_ids"):
+        for item in taxonomy.get(key) or []:
+            tags.append(str(item))
+    return tags
 
 
 def _scenario_text(scenario: dict) -> str:
@@ -385,8 +460,37 @@ def _delayed_payload_template(
     )
 
 
-def _default_attack_variant(scenario: dict) -> str:
+def _default_attack_variant(scenario: dict, attack_pattern: str, risk_type: str) -> str:
+    """Prefer a library variant for this risk/pattern; else mechanism slug from YAML."""
+    variants = list_variants(risk_type).get(attack_pattern) or []
+    if variants:
+        default = DEFAULT_VARIANTS.get(attack_pattern)
+        if default in variants:
+            return default
+        return variants[0]
     return _infer_attack_variant(scenario)
+
+
+def _payloads_from_library(
+    attack_pattern: str,
+    risk_type: str,
+    variant: str,
+    trigger_tool: str,
+    exfil_address: str,
+) -> list[PayloadTemplate] | None:
+    resolved = resolve_library_payloads(
+        attack_pattern,
+        risk_type,
+        variant,
+        trigger_tool=trigger_tool,
+        exfil_address=exfil_address,
+    )
+    if not resolved:
+        return None
+    return [
+        PayloadTemplate(role=item.get("role"), template=item["template"])
+        for item in resolved
+    ]
 
 
 def _build_injection(
@@ -399,16 +503,35 @@ def _build_injection(
 ) -> InjectionSpec:
     narrative = scenario.get("narrative") or {}
     tree = scenario.get("attack_tree") or {}
-    variant = attack_variant or _default_attack_variant(scenario)
+    if attack_pattern not in list_patterns():
+        raise ValueError(
+            f"Unknown attack_pattern '{attack_pattern}'. "
+            f"Known patterns: {list_patterns()}"
+        )
+
+    variant = attack_variant or _default_attack_variant(scenario, attack_pattern, risk_type)
     goal = tree.get("goal") or narrative.get("summary", "Cause unauthorized privileged action")
 
     exfil_channel = "email" if trigger_tool == "send_email" else "api"
     exfil_address = _infer_exfil_address(scenario)
 
-    if attack_pattern == "progressive_escalation":
+    library_payloads = _payloads_from_library(
+        attack_pattern, risk_type, variant, trigger_tool, exfil_address
+    )
+    if library_payloads:
+        payload_templates = library_payloads
+        log.info(
+            "Using attack_library templates: pattern=%s risk_type=%s variant=%s",
+            attack_pattern,
+            risk_type,
+            variant,
+        )
+    elif attack_pattern == "progressive_escalation":
         payload_templates = _progressive_payload_templates(scenario, trigger_tool, exfil_address)
+        log.info("Using forge-narrative progressive payloads (no library variant '%s')", variant)
     else:
         payload_templates = [_delayed_payload_template(scenario, trigger_tool, exfil_address)]
+        log.info("Using forge-narrative delayed payload (no library variant '%s')", variant)
 
     return InjectionSpec(
         goal=goal,
@@ -456,15 +579,19 @@ def forge_scenario_to_spec(
     attack_pattern: str = "delayed_trigger",
     attack_variant: str | None = None,
 ) -> ScenarioSpec:
-    """Map a forge scenario YAML dict to a ScenarioSpec without LLM planning."""
+    """Map a forge scenario YAML dict to a shared ScenarioSpec without LLM planning."""
     scenario_id = scenario["scenario_id"]
     meta = scenario.get("scenario_seed_metadata") or {}
+    narrative = scenario.get("narrative") or {}
     threat_id = meta.get("threat_id", "")
+    seed_id = meta.get("seed_id", "")
+    mechanism_name = meta.get("mechanism_name", "")
     risk_type = THREAT_RISK_TYPE.get(threat_id, "unauthorized_action")
 
     domain = _infer_domain(scenario)
     trigger_tool = _infer_trigger_tool(scenario)
     target_surfaces = _infer_target_surfaces(scenario)
+    surface, oracle = _lookup_surface_oracle(seed_id)
 
     user_task = _build_user_task(scenario, trigger_tool)
     injection = _build_injection(
@@ -481,6 +608,9 @@ def forge_scenario_to_spec(
     security = _build_security_criteria(trigger_tool, risk_type)
     utility = _build_utility_criteria(domain_skeleton, trigger_tool)
 
+    seed_facts, oracle_preds = _parse_behavior_spec(scenario.get("behavior_spec") or "")
+    payload_intent = narrative.get("summary", "") or ""
+
     spec = ScenarioSpec(
         spec_id=f"{scenario_id}-spec",
         risk_card_id=scenario_id,
@@ -491,12 +621,131 @@ def forge_scenario_to_spec(
         security_criteria=security,
         utility_criteria=utility,
         domain_skeleton=domain_skeleton,
+        seed_id=seed_id,
+        threat_id=threat_id,
+        mechanism_name=mechanism_name,
+        tags=_collect_tags(scenario),
+        injection_surface=surface,
+        oracle_target=oracle,
+        seed_facts=seed_facts,
+        oracle_narrative_predicates=oracle_preds,
+        payload_intent=payload_intent,
     )
 
     for warning in validate_scenario_spec(spec):
         log.warning("ScenarioSpec warning: %s", warning)
 
+    log.info(
+        "Built ScenarioSpec %s: surface=%s oracle=%s tools=%s",
+        scenario_id,
+        surface,
+        oracle,
+        spec.tool_names,
+    )
     return spec
+
+
+def write_scenario_spec(spec: ScenarioSpec, path: str | Path) -> Path:
+    """Persist a ScenarioSpec as JSON (shared on-disk source of truth)."""
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(spec.model_dump(), indent=2, default=str) + "\n", encoding="utf-8")
+    log.info("Wrote ScenarioSpec to %s", out)
+    return out
+
+
+def _spec_is_stale(spec: ScenarioSpec) -> bool:
+    """True if spec predates shared surface/oracle fields (or is incomplete)."""
+    return spec.injection_surface == "none" or not spec.seed_id
+
+
+def _resolved_attack_variant(scenario: dict, attack_variant: str | None) -> str:
+    return attack_variant or _default_attack_variant(scenario)
+
+
+def _spec_matches_request(
+    spec: ScenarioSpec,
+    scenario: dict,
+    attack_pattern: str,
+    attack_variant: str | None,
+) -> bool:
+    """True if on-disk spec already matches the requested attack settings."""
+    if _spec_is_stale(spec):
+        return False
+    if spec.injection.attack_pattern != attack_pattern:
+        return False
+    wanted_variant = _resolved_attack_variant(scenario, attack_variant)
+    if (spec.injection.attack_variant or "") != wanted_variant:
+        return False
+    return True
+
+
+def load_scenario_spec(path: str | Path) -> ScenarioSpec:
+    """Load a ScenarioSpec JSON from disk."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return ScenarioSpec.model_validate(data)
+
+
+def load_or_build_scenario_spec(
+    scenario_path: str | Path,
+    *,
+    run_dir: str | Path | None = None,
+    spec_path: str | Path | None = None,
+    attack_pattern: str = "delayed_trigger",
+    attack_variant: str | None = None,
+    persist: bool = True,
+) -> tuple[ScenarioSpec, str]:
+    """Load shared ScenarioSpec from disk, or build from forge YAML.
+
+    Pipeline and ArtifactGen_garak both use this so ``spec.json`` cannot diverge.
+
+    Returns (spec, source) where source is one of:
+      - ``disk`` — existing spec matches requested attack settings
+      - ``rebuilt`` — rebuilt (stale, missing, or attack_pattern/variant mismatch)
+      - ``built`` — no prior file; freshly built
+    """
+    from artifacts_io import SPEC_FILE, default_run_dir
+
+    loaded = load_scenario(scenario_path)
+    out_dir = default_run_dir(loaded.scenario_id, run_dir)
+    path = Path(spec_path) if spec_path else out_dir / SPEC_FILE
+
+    def _build() -> ScenarioSpec:
+        return forge_scenario_to_spec(
+            loaded.raw,
+            attack_pattern=attack_pattern,
+            attack_variant=attack_variant,
+        )
+
+    if path.is_file():
+        try:
+            spec = load_scenario_spec(path)
+            if _spec_matches_request(spec, loaded.raw, attack_pattern, attack_variant):
+                log.info(
+                    "Loaded ScenarioSpec from %s (pattern=%s)",
+                    path,
+                    attack_pattern,
+                )
+                return spec, "disk"
+            log.info(
+                "Rebuilding ScenarioSpec at %s (stale or attack settings mismatch; "
+                "want pattern=%s variant=%s)",
+                path,
+                attack_pattern,
+                _resolved_attack_variant(loaded.raw, attack_variant),
+            )
+            spec = _build()
+            if persist:
+                write_scenario_spec(spec, path)
+            return spec, "rebuilt"
+        except Exception as e:
+            log.warning("Failed to load %s (%s); rebuilding from forge YAML", path, e)
+
+    spec = _build()
+    if persist:
+        write_scenario_spec(spec, path)
+    return spec, "built"
+
 
 @dataclass
 class LoadedScenario:

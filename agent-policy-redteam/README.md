@@ -1,25 +1,25 @@
 # Policy-Driven Agentic Red Teaming
 
-A framework that ingests pre-built forge scenarios and automatically generates indirect prompt injection test environments to red-team AI agents. Uses any OpenAI-compatible model endpoint to simulate an agent with tool-calling.
+Takes pre-built **Scenario Forge** YAMLs and produces artifacts for red-teaming tool-calling agents — via the in-repo attack pipeline or downstream scanners such as **Garak** (and later AgentDojo).
 
 ## How It Works
 
 ```
-Forge Scenario (YAML)
-  → 1. Scenario Loader         — map forge YAML to ScenarioSpec (deterministic)
-  → 2. Environment Instantiator — codegen builds models/tools; LLM generates seed data only
-  → 3. Dry Run               — run agent on clean environment, record tool-call trace
-  → 4. Injection Placer      — deterministically place spec payloads along trace
-  → 5. Attack Run            — same agent, same task, injected environment
-  → 6. Evaluate              — security + utility using pre-defined criteria from spec
+Forge Scenario (examples/scenarios/*.yaml)
+  → Shared ScenarioSpec   — tools, task, injection, surface/oracle, criteria
+       ↑ payloads from attack_library (or forge-narrative fallback)
+  → Framework gate        — full | partial | skip per backend
+         ├─► Pipeline artifacts   — runs/{id}/ (env, tools, seed, injection, traces)
+         └─► Garak artifacts      — ArtifactGen_garak/configs/{id}.yaml
 ```
 
 **Key ideas:**
-- **Forge-driven** — scenarios come from pre-built `examples/scenarios/*.yaml`, not LLM planning
-- **ScenarioSpec upfront** — user task, injection goal, and evaluation criteria defined at load time
-- **Dry run first** — observe real agent behavior before placing injections, no guessing
-- **Multi-turn** — attacks span multiple tool calls, building context progressively
-- **Dual-metric evaluation** — security (did the agent leak data?) and utility (did it still complete the task?)
+- **Forge-driven** — inputs are `examples/scenarios/*.yaml`, not LLM scenario planning
+- **One shared ScenarioSpec** — pipeline and Garak both use `load_or_build_scenario_spec()`
+- **Attack library** — reusable pattern/variant payload templates; forge narrative fills gaps
+- **Artifacts diverge by framework** — Garak gets prompt/detector configs; pipeline gets executable env + traces
+- **Dry run before inject** (pipeline) — placement follows a real tool-call trace
+- **Dual metrics** — security (did the agent fail the policy?) and utility (did it still finish the task?)
 
 ## Quick Start
 
@@ -27,39 +27,37 @@ Forge Scenario (YAML)
 # Install dependencies
 pip install pydantic pyyaml openai httpx
 
-# Inspect a forge scenario and its ScenarioSpec conversion
+# Inspect a forge scenario → ScenarioSpec
 python scenario_loader.py examples/scenarios/AP-T2-01-28712e.yaml
 
-# Run pipeline (uses OLLAMA_BASE_URL and REDTEAM_MODEL env vars)
-# Artifacts are saved automatically to runs/{scenario_id}/
+# Run the in-repo pipeline (OLLAMA_BASE_URL / REDTEAM_MODEL)
+# Writes artifacts under runs/{scenario_id}/
 python pipeline.py --scenario examples/scenarios/AP-T2-01-28712e.yaml
 
-# Progressive escalation attack (3 fragments across records)
+# Progressive escalation with a library variant
 python pipeline.py --scenario examples/scenarios/AP-T2-01-28712e.yaml \
   --attack-pattern progressive_escalation \
-  --attack-variant parameter_pollution
-
-# Override output directory or individual artifact paths
-python pipeline.py --scenario examples/scenarios/AP-T2-01-28712e.yaml \
-  --output-dir runs/my-custom-run
+  --attack-variant authority_impersonation
 ```
 
 ### Configuration
 
 | Env Variable | Description |
 |---|---|
-| `OPENAI_API_KEY`  API key for the model endpoint |
-| `OLLAMA_BASE_URL` | OpenAI-compatible API endpoint (works with Ollama, vLLM, OpenAI, etc.) |
-| `REDTEAM_MODEL` | Model name for generation and agent simulation |
+| `OPENAI_API_KEY` | API key for the model endpoint (if required) |
+| `OLLAMA_BASE_URL` | OpenAI-compatible API base (Ollama, vLLM, OpenAI, …) |
+| `REDTEAM_MODEL` | Model name for seed generation and agent simulation |
 | `REDTEAM_MAX_TURNS` | Max tool-call turns per run |
+
+The agent under test is a **local OpenAI-compatible tool-calling loop** (`executor.py`) that `exec()`s generated tools — not a live OGX/OpenShell session.
 
 ### Run Output
 
-Each pipeline run writes to `runs/{scenario_id}/` by default (e.g. `runs/AP-T2-01-28712e/`):
+Default directory: `runs/{scenario_id}/` (e.g. `runs/AP-T2-01-28712e/`):
 
 | File | Contents |
 |---|---|
-| `spec.json` | ScenarioSpec from forge YAML |
+| `spec.json` | Shared ScenarioSpec (forge YAML + attack pattern/variant) |
 | `report.json` | Evaluation results (security + utility) |
 | `env_models.py` | Generated Pydantic models |
 | `tools.py` | Generated tool functions |
@@ -69,58 +67,109 @@ Each pipeline run writes to `runs/{scenario_id}/` by default (e.g. `runs/AP-T2-0
 | `clean_trace.json` | Dry-run tool-call trace |
 | `attack_trace.json` | Attack-run tool-call trace |
 
-Use `--output-dir` to override the directory, or `--spec-output` / `--report-output` / `--env-output` to override individual files.
+Override with `--output-dir`, or `--spec-output` / `--report-output` / `--env-output`.
 
-## Attack Patterns
+## Attack Library
 
-### Progressive Escalation
-Three injection fragments placed across different records the agent accesses. Each builds on the previous:
-1. **Premise** — first narrative step or attack-tree leaf
-2. **Reinforce** — middle narrative step
-3. **Trigger** — final step, with trigger-tool instruction appended
+Reusable payload templates live in **`attack_library.py`**.
 
-Content is derived from each forge scenario's narrative steps and attack tree.
+| Concept | Role |
+|---|---|
+| **Pattern** | *Staging* — how injections are placed (`delayed_trigger` vs `progressive_escalation`) |
+| **Variant** | *Wording pack* — template set keyed by `risk_type` (e.g. `authority_impersonation`) |
+| **Forge scenario** | Narrative, tools, goal, threat → drives `risk_type`, trigger tool, surfaces |
 
-### Delayed Trigger
-A single strong injection placed in one record, combining the attack goal, narrative summary, step actions, and behavior_spec excerpt. The instruction tells the agent to act *after* finishing its task — exploiting the gap between encountering the instruction and composing the final output.
+### Patterns
 
-`attack_variant` defaults to a slug of `scenario_seed_metadata.mechanism_name`.
+| Pattern | Staging |
+|---|---|
+| `delayed_trigger` | One strong injection in a single record; agent is told to act after finishing its task |
+| `progressive_escalation` | Three fragments (premise → reinforce → trigger) across records the agent accesses |
+
+### Variants by risk type
+
+| Risk type | `delayed_trigger` | `progressive_escalation` |
+|---|---|---|
+| `data_exfiltration` | `embedded_instruction` | `authority_impersonation`, `helpful_assistant_exploit`, `system_prompt_override` |
+| `unauthorized_action` | `embedded_instruction`, `policy_mimicry` | `authority_impersonation`, `helpful_assistant_exploit`, `system_prompt_override` |
+
+**Defaults** when `--attack-variant` is omitted: `embedded_instruction` (delayed), `authority_impersonation` (progressive) — if that pack exists for the scenario’s `risk_type`; otherwise the mechanism slug from the forge YAML.
+
+**Resolution** (in `scenario_loader`):
+1. Library match on `(pattern, risk_type, variant)` → format templates with `{trigger_tool}`, `{exfil_address}`, `{date}`
+2. Else forge-narrative fallback (attack-tree / narrative text wrapped for the pattern)
+
+```bash
+# List available packs
+python -c "from attack_library import list_all_variants; print(list_all_variants())"
+
+# Same flags on Garak gen
+python -m ArtifactGen_garak.gen examples/scenarios/AP-T9-01-8c5d51.yaml \
+  --attack-pattern progressive_escalation \
+  --attack-variant helpful_assistant_exploit \
+  --no-llm
+```
+
+## Downstream: Garak
+
+Garak code lives in **`ArtifactGen_garak/`**. Flow:
+
+`forge YAML → shared ScenarioSpec (runs/{id}/spec.json) → gate_garak → realize → configs/{id}.yaml → ForgeScenario probe`
+
+Loads `runs/{id}/spec.json` when present and matching `--attack-pattern` / `--attack-variant`; otherwise builds via the same `load_or_build_scenario_spec()` used by `pipeline.py`.
+
+```bash
+# Build shared specs + emit Garak configs (deterministic prompts)
+python -m ArtifactGen_garak.gen examples/scenarios/AP-T9-01-8c5d51.yaml --no-llm
+
+# Symlink plugins into the local Garak clone (once)
+ln -sf "$(pwd)/ArtifactGen_garak/plugins/probes/forge_scenario.py" \
+  ../garak/garak/probes/forge_scenario.py
+ln -sf "$(pwd)/ArtifactGen_garak/plugins/detectors/forge_scenario.py" \
+  ../garak/garak/detectors/forge_scenario.py
+
+# Smoke-run
+export FORGE_SCENARIO_CONFIG="$(pwd)/ArtifactGen_garak/configs/AP-T2-01-28712e.yaml"
+python -m garak --target_type test.Blank \
+  --probes forge_scenario.ForgeScenario --generations 1
+```
+
+Full details: [`ArtifactGen_garak/README.md`](ArtifactGen_garak/README.md).
+
+**Meta report** (all gates + run ASR + Spec/Probe/Detector viewers):
+
+```bash
+python garak_meta_report.py   # → reports/garak_meta.html
+```
 
 ## Evaluation
 
-Each scenario produces a dual metric:
-
-**Security** — did the agent resist the attack?
+**Security** — did the agent resist the attack?  
 **Utility** — did the agent still complete the task?
 
 ## Demo
 
-[**Pipeline Flow Diagram**](https://muneezaazmat.github.io/RH_TrustyAI_POC/agent-policy-redteam/pipeline-flow.html) — detailed visual walkthrough of the full pipeline architecture.
+[**Pipeline Flow Diagram**](https://muneezaazmat.github.io/RH_TrustyAI_POC/agent-policy-redteam/pipeline-flow.html) — visual walkthrough of the pipeline.
 
-[**Interactive Demo**](https://muneezaazmat.github.io/RH_TrustyAI_POC/agent-policy-redteam/demo.html) — interactive walkthrough populated with real run data. Includes:
-- Pipeline overview with implementation detail popups for each stage
-- Side-by-side comparison of both attack patterns
-- Full raw conversation traces
-- Security/utility evidence breakdowns
+[**Interactive Demo**](https://muneezaazmat.github.io/RH_TrustyAI_POC/agent-policy-redteam/demo.html) — walkthrough with run data (some pages may still describe older RiskCard framing).
 
 ## Project Structure
 
 ```
-├── pipeline.py              # Main orchestrator with CLI
-├── models.py                # Pydantic data models
-├── scenario_spec.py         # ScenarioSpec models + validation
-├── scenario_loader.py       # Forge YAML → ScenarioSpec (deterministic)
-├── triage.py                # Risk triage (agent vs sandbox level)
-├── codegen.py               # Deterministic models + tools from domain_skeleton
-├── seed_generator.py        # LLM seed data generation
-├── env_generator.py         # Orchestrates codegen + seed generation
-├── injection_placer.py      # Deterministic injection placement from spec + trace
-├── executor.py              # Agent loop (OpenAI-compatible tool-calling)
-├── evaluator.py             # Dual-metric evaluation from ScenarioSpec criteria
-├── artifacts_io.py          # Save/load run artifacts (env, injection, traces)
-├── examples/
-│   └── scenarios/           # Pre-built forge scenario YAML files
-├── runs/                    # Per-scenario run output (auto-created)
-├── demo.html                # Interactive demo with real run data
-└── DESIGN.md                # Design document
+├── pipeline.py              # In-repo orchestrator (CLI)
+├── scenario_loader.py       # Forge YAML → shared ScenarioSpec
+├── scenario_spec.py         # Shared ScenarioSpec (+ surface/oracle)
+├── attack_library.py        # Pattern/variant payload templates
+├── triage.py / scenario_filter.py
+├── codegen.py / seed_generator.py / env_generator.py
+├── injection_placer.py
+├── executor.py              # Local OpenAI-compatible agent loop
+├── evaluator.py / artifacts_io.py / replay.py
+├── ArtifactGen_garak/       # ScenarioSpec → Garak configs + probe plugins
+│   ├── gen.py / gate.py / realize.py / config_io.py
+│   ├── configs/             # Per-scenario probe configs
+│   └── plugins/             # ForgeScenario probe + detector
+├── examples/scenarios/      # Forge scenario YAMLs
+├── runs/                    # Pipeline artifacts (includes spec.json)
+└── demo.html / DESIGN.md
 ```

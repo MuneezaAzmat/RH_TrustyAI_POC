@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import json
 
+from attack_library import list_patterns
 from artifacts_io import (
     ATTACK_TRACE_FILE,
     CLEAN_TRACE_FILE,
@@ -17,8 +18,8 @@ from artifacts_io import (
 from models import SavedScenarioArtifacts, ScenarioResult
 from scenario_filter import is_volume_attack_spec
 from scenario_loader import (
-    forge_scenario_to_spec,
     is_volume_attack_forge_scenario,
+    load_or_build_scenario_spec,
     load_scenario,
     summarize_scenario,
     triage_from_scenario,
@@ -112,12 +113,17 @@ def run_pipeline(
         logger.info(f"Processing risk {idx}/{len(agent_risks)}: {triaged_risk.risk_card.id}")
         logger.info(f"{'='*60}")
 
-        logger.info("Step 2: Converting forge scenario to ScenarioSpec")
-        spec = forge_scenario_to_spec(
-            loaded.raw,
+        logger.info("Step 2: Loading/building shared ScenarioSpec")
+        spec_path = spec_output or str(run_dir / SPEC_FILE)
+        spec, spec_source = load_or_build_scenario_spec(
+            scenario_path,
+            run_dir=run_dir,
+            spec_path=spec_path,
             attack_pattern=attack_pattern,
             attack_variant=attack_variant,
+            persist=True,
         )
+        logger.info("ScenarioSpec %s (source=%s)", spec_path, spec_source)
 
         volume_reason = is_volume_attack_spec(spec)
         if volume_reason:
@@ -131,9 +137,11 @@ def run_pipeline(
         logger.info(f"Spec: {spec.spec_id} — domain: {spec.domain}")
         logger.info(f"User task: {spec.user_task.prompt[:100]}...")
         logger.info(f"Injection goal: {spec.injection.goal}")
-
-        spec_path = spec_output or str(run_dir / SPEC_FILE)
-        _write_json(spec_path, spec.model_dump())
+        logger.info(
+            "Attack pattern=%s variant=%s",
+            spec.injection.attack_pattern,
+            spec.injection.attack_variant,
+        )
 
         logger.info("Step 3: Instantiating environment")
         if generate_environment is None:
@@ -231,13 +239,16 @@ def main() -> None:
     parser.add_argument(
         "--attack-pattern",
         default="delayed_trigger",
-        choices=["delayed_trigger", "progressive_escalation"],
-        help="Attack pattern for spec conversion (default: delayed_trigger)"
+        choices=list_patterns(),
+        help="Attack pattern from attack_library (default: delayed_trigger)",
     )
     parser.add_argument(
         "--attack-variant",
         default=None,
-        help="Attack variant name (passed to spec conversion; defaults to mechanism slug from YAML)"
+        help=(
+            "Library variant (e.g. authority_impersonation, embedded_instruction). "
+            "Default: library default for the risk type, else mechanism slug from YAML"
+        ),
     )
 
     args = parser.parse_args()

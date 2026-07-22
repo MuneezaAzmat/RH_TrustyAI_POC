@@ -8,13 +8,15 @@ import logging
 import re
 from pathlib import Path
 
-from garak_ir import classify, gate
-from scenario_loader import list_scenario_files, load_scenario
+from ArtifactGen_garak.config_io import DEFAULT_CONFIG_DIR
+from ArtifactGen_garak.gate import gate_garak
+from scenario_loader import forge_scenario_to_spec, list_scenario_files, load_scenario
 
 log = logging.getLogger(__name__)
 
 RUNS_DIR = Path("runs")
-GARAK_OUT = Path("garak_out")
+GARAK_OUT = DEFAULT_CONFIG_DIR
+GARAK_RUNS_DIR = Path("reports") / "garak_runs"
 REPORTS_DIR = Path("reports")
 
 # ---------------------------------------------------------------------------
@@ -142,6 +144,24 @@ def _load_agentdojo_artifacts(scenario_id: str) -> dict:
     }
 
 
+def _load_garak_results(scenario_id: str) -> dict | None:
+    """Load summarized Garak run results from reports/garak_runs/{id}/summary.json."""
+    summary_path = GARAK_RUNS_DIR / scenario_id / "summary.json"
+    if not summary_path.exists():
+        return None
+    try:
+        data = json.loads(summary_path.read_text())
+    except Exception:
+        return None
+    # Keep report payload lean — drop bulky digest if present
+    if isinstance(data, dict):
+        data = {k: v for k, v in data.items() if k != "digest"}
+        outputs = data.get("outputs") or []
+        if isinstance(outputs, list) and len(outputs) > 2:
+            data["outputs"] = outputs[:2]
+    return data
+
+
 def _module_name(scenario_id: str) -> str:
     return scenario_id.replace("-", "_")
 
@@ -153,16 +173,22 @@ def collect_scenarios() -> list[dict]:
         raw = loaded.raw
         scenario_id = loaded.scenario_id
 
-        ir = classify(raw)
-        gate_result, gated_ir, gate_reason = gate(ir)
+        spec = forge_scenario_to_spec(raw)
+        gate_result, gated_spec, gate_reason = gate_garak(spec)
 
-        surface = ir.injection_surface.value
-        oracle = ir.oracle_target.value
+        surface = spec.injection_surface
+        oracle = spec.oracle_target
         adj_feas = _agentdojo_feasibility(surface, oracle)
 
-        mod = _module_name(scenario_id)
-        probe_code = _read_file(GARAK_OUT / "probes" / f"{mod}.py")
-        detector_code = _read_file(GARAK_OUT / "detectors" / f"{mod}.py")
+        config_text = _read_file(GARAK_OUT / f"{scenario_id}.yaml")
+        probe_code = config_text
+        detector_code = (
+            f"# Detection settings live in the same config\n"
+            f"# (ArtifactGen_garak/configs/{scenario_id}.yaml → detection:)\n"
+            if config_text
+            else ""
+        )
+        garak_results = _load_garak_results(scenario_id)
 
         adj_results = _load_agentdojo_results(scenario_id)
         adj_artifacts = _load_agentdojo_artifacts(scenario_id)
@@ -170,22 +196,24 @@ def collect_scenarios() -> list[dict]:
 
         scenarios.append({
             "scenario_id": scenario_id,
-            "seed_id": ir.seed_id,
-            "threat_id": ir.threat_id,
-            "mechanism_name": ir.mechanism_name,
-            "short_name": _short_name(ir.mechanism_name),
+            "seed_id": spec.seed_id,
+            "threat_id": spec.threat_id,
+            "mechanism_name": spec.mechanism_name,
+            "short_name": _short_name(spec.mechanism_name),
             "surface": surface,
             "surface_label": _SURFACE_LABELS.get(surface, surface),
             "oracle": oracle,
-            "trigger_tool": ir.trigger_tool,
-            "injection_goal": ir.injection_goal,
+            "trigger_tool": spec.injection.trigger_tool,
+            "injection_goal": spec.injection.goal,
             "surface_explanation": _SURFACE_EXPLANATIONS.get(surface, ""),
             "oracle_explanation": _ORACLE_EXPLANATIONS.get(oracle, ""),
             "garak": {
                 "feasibility": "no" if gate_result == "skip" else gate_result,
+                "gate_reason": gate_reason,
                 "explanation": _garak_explanation(surface, oracle, gate_result, gate_reason),
                 "probe_code": probe_code,
                 "detector_code": detector_code,
+                "results": garak_results,
             },
             "agentdojo": {
                 "feasibility": adj_feas,
@@ -474,15 +502,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   <!-- OVERVIEW VIEW -->
   <div id="view-overview" class="view active">
-    <h1>Which tool can run which scenario</h1>
-    <div class="subtitle">Coverage analysis across Garak and AgentDojo frameworks.</div>
+    <h1>Garak Scenario Coverage &amp; Run Report</h1>
+    <div class="subtitle">Feasibility gate + ForgeScenario probe results against qwen2.5:14b (Ollama).</div>
     <table>
       <thead>
         <tr>
           <th>Scenario</th>
           <th>Where it sits</th>
           <th>What we check</th>
-          <th>Garak</th>
+          <th>Garak gate</th>
+          <th>Garak run</th>
           <th>AgentDojo</th>
         </tr>
       </thead>
@@ -557,6 +586,15 @@ function closeYamlModal() {
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeYamlModal(); });
 
+function runBadge(s) {
+  const r = s.garak && s.garak.results;
+  if (s.garak.feasibility === 'no') return '<span class="badge badge-no">skipped</span>';
+  if (!r) return '<span class="badge" style="background:#eee;color:#888;">pending</span>';
+  if (r.status !== 'ok') return `<span class="badge badge-no">${esc(r.status || 'error')}</span>`;
+  if (r.attack_success) return '<span class="badge badge-no">hit</span>';
+  return '<span class="badge badge-full">pass</span>';
+}
+
 // --- Overview table ---
 function renderTable() {
   const tbody = document.getElementById('scenario-table');
@@ -567,6 +605,7 @@ function renderTable() {
       <td class="mono">${esc(s.surface_label)}</td>
       <td class="mono">${esc(s.oracle)}</td>
       <td>${badgeHtml(s.garak.feasibility)}</td>
+      <td>${runBadge(s)}</td>
       <td>${badgeHtml(s.agentdojo.feasibility)}</td>
     </tr>`;
   });
@@ -574,10 +613,16 @@ function renderTable() {
 
   const full_g = SCENARIOS.filter(s => s.garak.feasibility === 'full').length;
   const partial_g = SCENARIOS.filter(s => s.garak.feasibility === 'partial').length;
+  const no_g = SCENARIOS.filter(s => s.garak.feasibility === 'no').length;
+  const ran = SCENARIOS.filter(s => s.garak.results && s.garak.results.status === 'ok');
+  const hits = ran.filter(s => s.garak.results.attack_success).length;
+  const passes = ran.length - hits;
   const full_a = SCENARIOS.filter(s => s.agentdojo.feasibility === 'full').length;
   const partial_a = SCENARIOS.filter(s => s.agentdojo.feasibility === 'partial').length;
   document.getElementById('summary-footer').textContent =
-    `${SCENARIOS.length} scenarios. Garak: ${full_g} full, ${partial_g} partial. AgentDojo: ${full_a} full, ${partial_a} partial.`;
+    `${SCENARIOS.length} scenarios. Garak gate: ${full_g} full, ${partial_g} partial, ${no_g} no. ` +
+    `Garak runs: ${ran.length} completed (${hits} detector hits, ${passes} passes). ` +
+    `AgentDojo: ${full_a} full, ${partial_a} partial.`;
 }
 
 // --- Detail view ---
@@ -647,23 +692,68 @@ function showGarak(scenarioId) {
     ? `<pre>${esc(s.garak.detector_code)}</pre>`
     : `<div class="placeholder-msg">No detector generated.</div>`;
 
+  let resultsHtml = '';
+  const r = s.garak.results;
+  if (r && r.status === 'ok') {
+    const hit = r.attack_success;
+    const badge = hit
+      ? '<span class="badge badge-no">DETECTOR HIT</span>'
+      : '<span class="badge badge-full">PASS</span>';
+    const scorePct = Math.round((r.mean_detector_score || 0) * 100);
+    const scoreClass = hit ? 'fail' : 'pass';
+    const outputs = (r.outputs || []).map(o => `<pre>${esc(o)}</pre>`).join('');
+    resultsHtml = `
+      <div class="result-card">
+        <h4>Garak Run ${badge}</h4>
+        <div class="score-row">
+          <div class="score-item">
+            <div class="score-value ${scoreClass}">${scorePct}%</div>
+            <div class="score-label">Detector score</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value pass">${esc(String(r.elapsed_sec || '?'))}s</div>
+            <div class="score-label">Elapsed</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value pass">${esc(String(r.attempts || 0))}</div>
+            <div class="score-label">Attempts</div>
+          </div>
+        </div>
+        <div class="desc" style="margin-bottom:12px;">
+          Target: <code>${esc(r.target_type || '')} / ${esc(r.target_name || '')}</code>
+          &nbsp; Gate: <code>${esc(r.gate || s.garak.feasibility)}</code>
+        </div>
+        <details open>
+          <summary style="cursor:pointer; font-size:13px; font-weight:600;">Model outputs</summary>
+          ${outputs || '<div class="placeholder-msg">No outputs captured.</div>'}
+        </details>
+      </div>
+    `;
+  } else if (r) {
+    resultsHtml = `<div class="placeholder-msg">Garak run status: <code>${esc(r.status || 'error')}</code>${r.error ? ' — ' + esc(r.error) : ''}</div>`;
+  } else if (s.garak.feasibility === 'no') {
+    resultsHtml = `<div class="placeholder-msg">Skipped by gate: ${esc(s.garak.gate_reason || s.garak.explanation)}</div>`;
+  } else {
+    resultsHtml = `<div class="placeholder-msg">No Garak run results yet.<br>
+      Run: <code>python3 scripts/run_garak_batch.py ${esc(s.scenario_id)}</code></div>`;
+  }
+
   document.getElementById('garak-content').innerHTML = `
     <div class="detail-header">
       <h2>Garak Artifacts — ${esc(s.seed_id)}</h2>
       <div class="meta">${esc(s.mechanism_name)}</div>
     </div>
     <div class="artifact-section">
-      <h3>Probe</h3>
+      <h3>Run Results</h3>
+      ${resultsHtml}
+    </div>
+    <div class="artifact-section">
+      <h3>Probe config</h3>
       ${probeHtml}
     </div>
     <div class="artifact-section">
       <h3>Detector</h3>
       ${detectorHtml}
-    </div>
-    <div class="artifact-section">
-      <h3>Run Results</h3>
-      <div class="placeholder-msg">Garak run results will appear here once the garak fork is cloned and probes are executed.<br>
-      Run: <code>garak --model_type ollama --probes garak_out.probes.${s.scenario_id.replace(/-/g, '_')}</code></div>
     </div>
   `;
 }

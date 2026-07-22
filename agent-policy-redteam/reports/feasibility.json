@@ -1,0 +1,202 @@
+[
+  {
+    "scenario_id": "AP-T11-01-c7cd1e",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T11-01-c7cd1e.yaml"
+  },
+  {
+    "scenario_id": "AP-T11-02-04e0cb",
+    "garak_tag": "full",
+    "surface": "tool_return",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T11-02-04e0cb.yaml"
+  },
+  {
+    "scenario_id": "AP-T11-03-415b25",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T11-03-415b25.yaml"
+  },
+  {
+    "scenario_id": "AP-T15-01-832854",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "output_string",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T15-01-832854.yaml"
+  },
+  {
+    "scenario_id": "AP-T15-02-9df512",
+    "garak_tag": "full",
+    "surface": "tool_return",
+    "oracle": "output_string",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T15-02-9df512.yaml"
+  },
+  {
+    "scenario_id": "AP-T17-01-00d278",
+    "garak_tag": "full",
+    "surface": "system_prompt",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T17-01-00d278.yaml"
+  },
+  {
+    "scenario_id": "AP-T17-02-8e8e3e",
+    "garak_tag": "no",
+    "surface": "tool_definition",
+    "oracle": "forbidden_call",
+    "gate_reason": "Garak cannot write to tool_definition surface (AP-T17-02)",
+    "config_path": null
+  },
+  {
+    "scenario_id": "AP-T2-01-28712e",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T2-01-28712e.yaml"
+  },
+  {
+    "scenario_id": "AP-T2-02-3f1185",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T2-02-3f1185.yaml"
+  },
+  {
+    "scenario_id": "AP-T2-03-7108ff",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T2-03-7108ff.yaml"
+  },
+  {
+    "scenario_id": "AP-T2-06-85bd56",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T2-06-85bd56.yaml"
+  },
+  {
+    "scenario_id": "AP-T3-01-b25bf4",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T3-01-b25bf4.yaml"
+  },
+  {
+    "scenario_id": "AP-T3-02-dfa616",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T3-02-dfa616.yaml"
+  },
+  {
+    "scenario_id": "AP-T3-03-2a9d1e",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T3-03-2a9d1e.yaml"
+  },
+  {
+    "scenario_id": "AP-T7-01-44b787",
+    "garak_tag": "full",
+    "surface": "user_turn",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T7-01-44b787.yaml"
+  },
+  {
+    "scenario_id": "AP-T7-02-8f1884",
+    "garak_tag": "full",
+    "surface": "tool_return",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T7-02-8f1884.yaml"
+  },
+  {
+    "scenario_id": "AP-T7-03-f2bbd2",
+    "garak_tag": "full",
+    "surface": "tool_return",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T7-03-f2bbd2.yaml"
+  },
+  {
+    "scenario_id": "AP-T7-04-506268",
+    "garak_tag": "full",
+    "surface": "tool_return",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T7-04-506268.yaml"
+  },
+  {
+    "scenario_id": "AP-T7-05-bf1181",
+    "garak_tag": "full",
+    "surface": "tool_return",
+    "oracle": "forbidden_call",
+    "gate_reason": "fully supported",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T7-05-bf1181.yaml"
+  },
+  {
+    "scenario_id": "AP-T8-01-3705fa",
+    "garak_tag": "no",
+    "surface": "user_turn",
+    "oracle": "state_vs_log",
+    "gate_reason": "Garak cannot observe state_vs_log oracle (AP-T8-01)",
+    "config_path": null
+  },
+  {
+    "scenario_id": "AP-T8-02-ad9ade",
+    "garak_tag": "no",
+    "surface": "user_turn",
+    "oracle": "state_vs_log",
+    "gate_reason": "Garak cannot observe state_vs_log oracle (AP-T8-02)",
+    "config_path": null
+  },
+  {
+    "scenario_id": "AP-T8-03-ccf918",
+    "garak_tag": "no",
+    "surface": "user_turn",
+    "oracle": "state_vs_log",
+    "gate_reason": "Garak cannot observe state_vs_log oracle (AP-T8-03)",
+    "config_path": null
+  },
+  {
+    "scenario_id": "AP-T9-01-8c5d51",
+    "garak_tag": "partial",
+    "surface": "tool_return",
+    "oracle": "output_string",
+    "gate_reason": "wrong_target downgraded to output_string",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T9-01-8c5d51.yaml"
+  },
+  {
+    "scenario_id": "AP-T9-03-d0fd53",
+    "garak_tag": "partial",
+    "surface": "tool_return",
+    "oracle": "output_string",
+    "gate_reason": "wrong_target downgraded to output_string",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T9-03-d0fd53.yaml"
+  },
+  {
+    "scenario_id": "AP-T9-05-35c032",
+    "garak_tag": "partial",
+    "surface": "tool_return",
+    "oracle": "output_string",
+    "gate_reason": "wrong_target downgraded to output_string",
+    "config_path": "/Users/Muneeza/Documents/experiments/agent-policy-redteam/ArtifactGen_garak/configs/AP-T9-05-35c032.yaml"
+  }
+]
