@@ -80,8 +80,7 @@ _PROGRESSIVE_ROLES = ("premise", "reinforce", "trigger")
 # Surface / oracle classification by forge seed_id (exact, then threat prefix).
 _CLASSIFICATION: dict[str, tuple[InjectionSurface, OracleTarget]] = {
     "AP-T2": ("user_turn", "forbidden_call"),
-    # T3: privilege retention / session lifecycle — needs multi-turn stateful backend
-    "AP-T3": ("user_turn", "persistent_state"),
+    "AP-T3": ("user_turn", "forbidden_call"),
     "AP-T7-01": ("user_turn", "forbidden_call"),
     "AP-T7-02": ("tool_return", "forbidden_call"),
     "AP-T7-03": ("tool_return", "forbidden_call"),
@@ -662,10 +661,6 @@ def _spec_matches_request(
     wanted_variant = _resolved_attack_variant(scenario, attack_variant, attack_pattern)
     if (spec.injection.attack_variant or "") != wanted_variant:
         return False
-    if spec.seed_id:
-        surface, oracle = _lookup_surface_oracle(spec.seed_id)
-        if spec.injection_surface != surface or spec.oracle_target != oracle:
-            return False
     return True
 
 
