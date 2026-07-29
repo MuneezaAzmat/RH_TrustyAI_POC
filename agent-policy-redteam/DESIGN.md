@@ -8,7 +8,7 @@ A monolithic Python pipeline that ingests pre-built forge scenarios from `exampl
 
 ```
 Forge Scenario (YAML)
-  → 1. Scenario Loader (deterministic → ScenarioSpec)
+  → 1. Scenario Loader (extract + LLM complete → ScenarioSpec)
   → 2. Environment Instantiator (codegen + LLM seed data)
   → 3. Dry Run (clean run, record tool-call trace + baseline state)
   → 4. Injection Placer (deterministic — apply spec payloads along trace)
@@ -21,7 +21,7 @@ Forge Scenario (YAML)
 
 - **Target**: Own agents deployed on OGX + OpenShell
 - **Scope**: Agent policy compliance testing (sandbox-level deferred)
-- **Generation**: Forge scenario loader produces a complete ScenarioSpec deterministically; environment instantiator (LLM) only generates seed data. Injection placement is deterministic.
+- **Generation**: Domain skeleton (tools/entities) = extract from forge + grounded LLM completion, frozen in `spec.json`; env models/tools = deterministic codegen from that skeleton; seed data = LLM (optional fallback). Injection placement is deterministic.
 - **Environment**: Pydantic models with in-memory state + CRUD tool functions. No real DB. Each scenario gets a minimal purpose-built environment.
 - **Tool registration**: OGX-native (register tools with OGX agent's tool runtime)
 - **Attack patterns**: Delayed trigger + progressive escalation across multiple turns
@@ -32,7 +32,7 @@ Forge Scenario (YAML)
 
 ### 1. Scenario Loader
 - Input: Forge scenario YAML from `examples/scenarios/`
-- Deterministic mapping to `ScenarioSpec`:
+- Extract from forge + grounded LLM completion for domain skeleton; deterministic mapping for task, injection, and criteria into `ScenarioSpec`:
   - User task (prompt, required data access, forbidden actions, expected outcome)
   - Injection spec (goal, attack pattern, payload templates, trigger tool, target surfaces)
   - Security criteria (must_not_call, verification predicates, sensitive patterns)
@@ -115,7 +115,7 @@ agent-policy-redteam/
 ├── pipeline.py          # Main pipeline orchestrator
 ├── triage.py            # Risk triage (agent vs sandbox level)
 ├── scenario_spec.py     # ScenarioSpec Pydantic models + validation
-├── scenario_loader.py   # Forge YAML → ScenarioSpec (deterministic)
+├── scenario_loader.py   # Forge YAML → ScenarioSpec (extract + LLM skeleton)
 ├── codegen.py           # Deterministic models + tools from domain_skeleton
 ├── seed_generator.py    # LLM seed data only
 ├── env_generator.py     # Orchestrates codegen + seed generation

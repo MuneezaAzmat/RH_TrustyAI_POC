@@ -6,7 +6,8 @@ Takes pre-built **Scenario Forge** YAMLs and produces artifacts for red-teaming 
 
 ```
 Forge Scenario (examples/scenarios/*.yaml)
-  → Shared ScenarioSpec   — tools, task, injection, surface/oracle, criteria
+  → Shared ScenarioSpec   — extract from forge + grounded LLM completion (tools/entities);
+       frozen in runs/{id}/spec.json; task, injection, surface/oracle, criteria
        ↑ payloads from attack_library (or forge-narrative fallback)
   → Framework gate        — full | partial | skip per backend
          ├─► Pipeline artifacts   — runs/{id}/ (env, tools, seed, injection, traces)
@@ -15,7 +16,8 @@ Forge Scenario (examples/scenarios/*.yaml)
 
 **Key ideas:**
 - **Forge-driven** — inputs are `examples/scenarios/*.yaml`, not LLM scenario planning
-- **One shared ScenarioSpec** — pipeline and Garak both use `load_or_build_scenario_spec()`
+- **One shared ScenarioSpec** — pipeline and Garak both use `load_or_build_scenario_spec()`; domain skeleton (tools/entities) is **extract from forge + grounded LLM completion**, then frozen in `runs/{id}/spec.json`
+- **Deterministic artifact codegen** — env models/tools generated deterministically from the frozen skeleton; seed data may still use LLM
 - **Attack library** — reusable pattern/variant payload templates; forge narrative fills gaps
 - **Artifacts diverge by framework** — Garak gets prompt/detector configs; pipeline gets executable env + traces
 - **Dry run before inject** (pipeline) — placement follows a real tool-call trace
@@ -157,7 +159,7 @@ python garak_meta_report.py   # → reports/garak_meta.html
 
 ```
 ├── pipeline.py              # In-repo orchestrator (CLI)
-├── scenario_loader.py       # Forge YAML → shared ScenarioSpec
+├── scenario_loader.py       # Forge YAML → shared ScenarioSpec (extract + LLM skeleton)
 ├── scenario_spec.py         # Shared ScenarioSpec (+ surface/oracle)
 ├── attack_library.py        # Pattern/variant payload templates
 ├── triage.py / scenario_filter.py
