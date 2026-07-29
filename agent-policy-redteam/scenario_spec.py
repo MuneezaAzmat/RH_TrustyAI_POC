@@ -83,7 +83,6 @@ OracleTarget = Literal[
     "wrong_target",
     "state_vs_log",
     "cross_turn",
-    "persistent_state",
 ]
 
 
