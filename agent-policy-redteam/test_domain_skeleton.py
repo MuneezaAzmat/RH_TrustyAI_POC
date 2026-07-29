@@ -1,8 +1,12 @@
 """Tests for domain skeleton extract + grounded LLM completion."""
 
 import unittest
+from pathlib import Path
 
+from scenario_loader import extract_domain_draft, extract_named_tools, extract_trigger_tool, load_scenario
 from scenario_spec import DomainSkeleton, EntityFieldSpec, EntitySpec, ToolSpec
+
+SCENARIOS = Path(__file__).parent / "examples" / "scenarios"
 
 
 def _tool(name: str, category: str = "read", params: list[str] | None = None) -> ToolSpec:
@@ -66,6 +70,34 @@ class TestAnchors(unittest.TestCase):
         )
         errors = validate_codegen_categories(bad)
         self.assertTrue(any("admin" in e for e in errors))
+
+
+class TestExtractDraft(unittest.TestCase):
+    def test_extract_trigger_from_ap_t2_text(self):
+        loaded = load_scenario(SCENARIOS / "AP-T2-01-28712e.yaml")
+        tools = extract_named_tools(loaded.raw)
+        self.assertIn("process_refund", tools)
+        self.assertEqual(extract_trigger_tool(loaded.raw), "process_refund")
+
+    def test_draft_has_no_finance_filler_reads_when_not_in_text(self):
+        """Draft must not invent list_transactions unless mentioned or later LLM-added."""
+        loaded = load_scenario(SCENARIOS / "AP-T2-01-28712e.yaml")
+        draft = extract_domain_draft(loaded.raw)
+        tool_names = {t.name for t in draft.required_tools}
+        # process_refund is in narrative; list_transactions may or may not be —
+        # assert we never pull from removed _FINANCE_READ_TOOLS constant path:
+        # if list_transactions appears, it must be in the scenario text.
+        text = str(loaded.raw).lower()
+        for name in tool_names:
+            if name in ("list_transactions", "get_transaction_detail"):
+                self.assertIn(name, text)
+
+    def test_finance_constants_removed(self):
+        import scenario_loader as sl
+
+        self.assertFalse(hasattr(sl, "_FINANCE_READ_TOOLS"))
+        self.assertFalse(hasattr(sl, "_FINANCE_TRIGGER_TOOL"))
+        self.assertFalse(hasattr(sl, "_FINANCE_TARGET_SURFACES"))
 
 
 if __name__ == "__main__":
