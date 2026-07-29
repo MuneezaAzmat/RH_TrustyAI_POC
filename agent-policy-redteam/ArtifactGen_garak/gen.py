@@ -49,6 +49,7 @@ def _process_scenario(
         attack_pattern=attack_pattern,
         attack_variant=attack_variant,
         persist=persist_spec,
+        use_llm=False if dry_run else use_llm,
     )
     result, gated_spec, reason = gate_garak(spec)
 

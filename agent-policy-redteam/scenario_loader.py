@@ -567,13 +567,22 @@ def forge_scenario_to_spec(
 
     target_surfaces = extract_target_surfaces(scenario)
     if not target_surfaces:
+        # Prefer a string-typed field (skipping id) before falling back to any
+        # other non-id field, so injectable surfaces are text-like by default.
+        fallback_field: str | None = None
         for entity in domain_skeleton.entity_types:
             for f in entity.fields:
-                if f.name != "id":
+                if f.name == "id":
+                    continue
+                if f.field_type == "string":
                     target_surfaces.append(f.name)
                     break
+                if fallback_field is None:
+                    fallback_field = f.name
             if target_surfaces:
                 break
+        if not target_surfaces and fallback_field is not None:
+            target_surfaces.append(fallback_field)
     if not target_surfaces:
         raise ValueError("No injection target_surfaces after domain completion")
 
@@ -681,6 +690,7 @@ def load_or_build_scenario_spec(
     attack_pattern: str = "delayed_trigger",
     attack_variant: str | None = None,
     persist: bool = True,
+    use_llm: bool = True,
 ) -> tuple[ScenarioSpec, str]:
     """Load shared ScenarioSpec from disk, or build from forge YAML.
 
@@ -690,6 +700,11 @@ def load_or_build_scenario_spec(
       - ``disk`` — existing spec matches requested attack settings
       - ``rebuilt`` — rebuilt (stale, missing, or attack_pattern/variant mismatch)
       - ``built`` — no prior file; freshly built
+
+    Only on-disk spec load/parse failures are treated as recoverable (falling
+    through to a fresh build); failures raised by the build itself (including
+    the grounded LLM domain-skeleton completion) are not caught here and
+    propagate to the caller.
     """
     from artifacts_io import SPEC_FILE, default_run_dir
 
@@ -702,11 +717,15 @@ def load_or_build_scenario_spec(
             loaded.raw,
             attack_pattern=attack_pattern,
             attack_variant=attack_variant,
+            use_llm=use_llm,
         )
 
     if path.is_file():
         try:
             spec = load_scenario_spec(path)
+        except Exception as e:
+            log.warning("Failed to load %s (%s); rebuilding from forge YAML", path, e)
+        else:
             if _spec_matches_request(spec, loaded.raw, attack_pattern, attack_variant):
                 log.info(
                     "Loaded ScenarioSpec from %s (pattern=%s)",
@@ -725,8 +744,6 @@ def load_or_build_scenario_spec(
             if persist:
                 write_scenario_spec(spec, path)
             return spec, "rebuilt"
-        except Exception as e:
-            log.warning("Failed to load %s (%s); rebuilding from forge YAML", path, e)
 
     spec = _build()
     if persist:
