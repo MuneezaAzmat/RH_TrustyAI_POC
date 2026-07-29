@@ -1,5 +1,6 @@
 """Tests for domain skeleton extract + grounded LLM completion."""
 
+import json
 import unittest
 from pathlib import Path
 
@@ -98,6 +99,80 @@ class TestExtractDraft(unittest.TestCase):
         self.assertFalse(hasattr(sl, "_FINANCE_READ_TOOLS"))
         self.assertFalse(hasattr(sl, "_FINANCE_TRIGGER_TOOL"))
         self.assertFalse(hasattr(sl, "_FINANCE_TARGET_SURFACES"))
+
+
+class TestCompleteDomainSkeleton(unittest.TestCase):
+    def test_mocked_llm_preserves_anchors_and_adds_reads(self):
+        from domain_skeleton_llm import complete_domain_skeleton
+
+        draft = _skel([_tool("process_refund", "privileged", ["transaction_id"])], ["notes"])
+
+        class FakeChoices:
+            def __init__(self, content):
+                self.message = type("M", (), {"content": content})()
+
+        class FakeResp:
+            def __init__(self, content):
+                self.choices = [FakeChoices(content)]
+
+        class FakeClient:
+            def __init__(self):
+                self.chat = self
+                self.completions = self
+
+            def create(self, **kwargs):
+                payload = {
+                    "entity_types": [
+                        {
+                            "name": "Record",
+                            "record_count": 8,
+                            "fields": [
+                                {"name": "id", "sensitive": False, "field_type": "string"},
+                                {"name": "notes", "sensitive": False, "field_type": "string"},
+                                {"name": "purchase_amount", "sensitive": True, "field_type": "float"},
+                            ],
+                        }
+                    ],
+                    "required_tools": [
+                        {
+                            "name": "list_transactions",
+                            "category": "read",
+                            "description": "List transactions",
+                            "parameters": [],
+                        },
+                        {
+                            "name": "get_transaction_detail",
+                            "category": "read",
+                            "description": "Get one transaction",
+                            "parameters": ["transaction_id"],
+                        },
+                        {
+                            "name": "process_refund",
+                            "category": "privileged",
+                            "description": "Process refund",
+                            "parameters": ["transaction_id", "refund_amount"],
+                        },
+                    ],
+                    "seed_data_constraints": ["8 realistic transactions"],
+                }
+                return FakeResp(json.dumps(payload))
+
+        completed = complete_domain_skeleton(
+            {"scenario_id": "test", "narrative": {"summary": "refund abuse"}},
+            draft,
+            client=FakeClient(),
+            use_llm=True,
+        )
+        names = {t.name for t in completed.required_tools}
+        self.assertIn("process_refund", names)
+        self.assertIn("list_transactions", names)
+
+    def test_no_llm_incomplete_draft_raises(self):
+        from domain_skeleton_llm import complete_domain_skeleton
+
+        draft = DomainSkeleton(entity_types=[], required_tools=[], seed_data_constraints=[])
+        with self.assertRaises(RuntimeError):
+            complete_domain_skeleton({}, draft, use_llm=False)
 
 
 if __name__ == "__main__":
