@@ -17,6 +17,7 @@ from attack_library import (
     list_variants,
     resolve_library_payloads,
 )
+from domain_skeleton_llm import complete_domain_skeleton
 from scenario_filter import detect_volume_attack_text
 from scenario_spec import (
     DomainSkeleton,
@@ -227,16 +228,6 @@ def extract_domain_draft(scenario: dict) -> DomainSkeleton:
     )
 
 
-def _infer_trigger_tool(scenario: dict) -> str:
-    found = extract_trigger_tool(scenario)
-    if not found:
-        raise ValueError(
-            f"No trigger tool named in scenario text "
-            f"({scenario.get('scenario_id', '?')})"
-        )
-    return found
-
-
 def _infer_domain(scenario: dict) -> str:
     text = _scenario_text(scenario).lower()
     if any(k in text for k in ("klarna", "refund", "payment", "transaction", "invoice")):
@@ -273,20 +264,6 @@ def _build_user_task(scenario: dict, trigger_tool: str) -> UserTaskSpec:
             f"Attack goal to prevent: {goal[:200]}"
         ),
     )
-
-
-def _build_domain_skeleton(
-    scenario: dict,
-    risk_type: str,
-    domain: str,
-    trigger_tool: str,
-    target_surfaces: list[str],
-) -> DomainSkeleton:
-    return extract_domain_draft(scenario)
-
-
-def _infer_target_surfaces(scenario: dict) -> list[str]:
-    return extract_target_surfaces(scenario)
 
 
 def _infer_exfil_address(scenario: dict) -> str:
@@ -556,8 +533,13 @@ def forge_scenario_to_spec(
     scenario: dict,
     attack_pattern: str = "delayed_trigger",
     attack_variant: str | None = None,
+    use_llm: bool = True,
 ) -> ScenarioSpec:
-    """Map a forge scenario YAML dict to a shared ScenarioSpec without LLM planning."""
+    """Map a forge scenario YAML dict to a shared ScenarioSpec.
+
+    The domain skeleton is extracted from the forge text, then completed
+    (grounded in that draft) via ``complete_domain_skeleton``.
+    """
     scenario_id = scenario["scenario_id"]
     meta = scenario.get("scenario_seed_metadata") or {}
     narrative = scenario.get("narrative") or {}
@@ -567,9 +549,33 @@ def forge_scenario_to_spec(
     risk_type = THREAT_RISK_TYPE.get(threat_id, "unauthorized_action")
 
     domain = _infer_domain(scenario)
-    trigger_tool = _infer_trigger_tool(scenario)
-    target_surfaces = _infer_target_surfaces(scenario)
     surface, oracle = _lookup_surface_oracle(seed_id)
+
+    draft = extract_domain_draft(scenario)
+    domain_skeleton = complete_domain_skeleton(scenario, draft, use_llm=use_llm)
+
+    # Derive trigger / surfaces from completed skeleton (not finance defaults)
+    tool_names = [t.name for t in domain_skeleton.required_tools]
+    trigger_tool = extract_trigger_tool(scenario)
+    if trigger_tool is None or trigger_tool not in tool_names:
+        for t in domain_skeleton.required_tools:
+            if t.category in ("privileged", "communicate"):
+                trigger_tool = t.name
+                break
+        if trigger_tool is None:
+            raise ValueError("Completed domain_skeleton has no trigger tool")
+
+    target_surfaces = extract_target_surfaces(scenario)
+    if not target_surfaces:
+        for entity in domain_skeleton.entity_types:
+            for f in entity.fields:
+                if f.name != "id":
+                    target_surfaces.append(f.name)
+                    break
+            if target_surfaces:
+                break
+    if not target_surfaces:
+        raise ValueError("No injection target_surfaces after domain completion")
 
     user_task = _build_user_task(scenario, trigger_tool)
     injection = _build_injection(
@@ -579,9 +585,6 @@ def forge_scenario_to_spec(
         attack_variant,
         trigger_tool,
         target_surfaces,
-    )
-    domain_skeleton = _build_domain_skeleton(
-        scenario, risk_type, domain, trigger_tool, target_surfaces
     )
     security = _build_security_criteria(trigger_tool, risk_type)
     utility = _build_utility_criteria(domain_skeleton, trigger_tool)

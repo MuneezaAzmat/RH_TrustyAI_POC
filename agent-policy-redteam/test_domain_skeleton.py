@@ -175,5 +175,45 @@ class TestCompleteDomainSkeleton(unittest.TestCase):
             complete_domain_skeleton({}, draft, use_llm=False)
 
 
+class TestForgeScenarioToSpecWiring(unittest.TestCase):
+    def test_forge_scenario_to_spec_uses_completed_skeleton(self):
+        from unittest.mock import patch
+        from scenario_loader import forge_scenario_to_spec, load_scenario
+
+        loaded = load_scenario(SCENARIOS / "AP-T2-01-28712e.yaml")
+        completed = DomainSkeleton(
+            entity_types=[
+                EntitySpec(
+                    name="Transaction",
+                    fields=[
+                        EntityFieldSpec(name="id", field_type="string"),
+                        EntityFieldSpec(name="notes", field_type="string"),
+                        EntityFieldSpec(name="purchase_amount", sensitive=True, field_type="float"),
+                    ],
+                    record_count=8,
+                )
+            ],
+            required_tools=[
+                _tool("list_transactions"),
+                _tool("get_transaction_detail", params=["transaction_id"]),
+                _tool("process_refund", "privileged", ["transaction_id", "refund_amount"]),
+            ],
+            seed_data_constraints=["8 transactions"],
+        )
+
+        with patch(
+            "scenario_loader.complete_domain_skeleton",
+            return_value=completed,
+        ) as mocked:
+            spec = forge_scenario_to_spec(loaded.raw, use_llm=True)
+        mocked.assert_called_once()
+        self.assertEqual(
+            {t.name for t in spec.domain_skeleton.required_tools},
+            {"list_transactions", "get_transaction_detail", "process_refund"},
+        )
+        self.assertEqual(spec.injection.trigger_tool, "process_refund")
+        self.assertIn("notes", spec.injection.target_surfaces)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -83,14 +83,17 @@ OracleTarget = Literal[
     "wrong_target",
     "state_vs_log",
     "cross_turn",
+    "persistent_state",
 ]
 
 
 class ScenarioSpec(BaseModel):
     """Shared scenario specification: forge YAML → one spec → framework artifacts.
 
-    Deterministically derived (no LLM). Downstream emitters (pipeline env,
-    Garak configs, …) consume this object.
+    Most fields are deterministically derived from the forge scenario; the
+    domain skeleton is extracted from that text and then completed (grounded
+    in the draft) by an LLM, after which it is frozen here. Downstream
+    emitters (pipeline env, Garak configs, …) consume this object as-is.
     """
 
     spec_id: str
