@@ -27,10 +27,33 @@ MAX_RETRIES = 2
 _client = None
 
 
+def configure_llm(
+    base_url: str | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
+) -> None:
+    """Set OpenAI-compatible endpoint knobs and reset the cached client.
+
+    Supports Ollama, OpenAI, Hugging Face Inference (OpenAI-compatible),
+    and Claude via an OpenAI-compatible gateway (e.g. OpenRouter).
+    """
+    global OLLAMA_BASE_URL, MODEL, _client
+    if base_url is not None:
+        OLLAMA_BASE_URL = base_url.rstrip("/")
+        os.environ["OLLAMA_BASE_URL"] = OLLAMA_BASE_URL
+    if api_key is not None:
+        os.environ["OPENAI_API_KEY"] = api_key
+    if model is not None:
+        MODEL = model
+        os.environ["REDTEAM_MODEL"] = model
+    _client = None
+
+
 def _get_client() -> OpenAI:
     global _client
     if _client is None:
-        _client = OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
+        api_key = os.environ.get("OPENAI_API_KEY") or "ollama"
+        _client = OpenAI(base_url=OLLAMA_BASE_URL, api_key=api_key)
     return _client
 
 
