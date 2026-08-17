@@ -1,8 +1,7 @@
-"""Forge scenario → shared ScenarioSpec → Garak artifacts."""
+"""Scenario YAML → schema-v2 EnvironmentSpec → Garak artifacts."""
 
-from scenario_loader import forge_scenario_to_spec
-from scenario_spec import ScenarioSpec
+from environment_spec import EnvironmentSpec
 
 from .gate import gate_garak
 
-__all__ = ["ScenarioSpec", "forge_scenario_to_spec", "gate_garak"]
+__all__ = ["EnvironmentSpec", "gate_garak"]

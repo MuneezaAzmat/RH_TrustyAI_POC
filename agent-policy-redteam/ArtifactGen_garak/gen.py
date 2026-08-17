@@ -1,13 +1,11 @@
-"""CLI: forge scenario / shared ScenarioSpec → Garak configs.
+"""CLI: frozen EnvironmentSpec → Garak artifacts (step 2).
 
-Prefers ``runs/{scenario_id}/spec.json`` when present and up to date;
-otherwise builds from forge YAML and persists the shared spec.
+Requires ``runs/{scenario_id}/spec.json`` from step 1.
 
 Usage:
     python -m ArtifactGen_garak.gen
     python -m ArtifactGen_garak.gen examples/scenarios/AP-T9-01-8c5d51.yaml
     python -m ArtifactGen_garak.gen --dry-run
-    python -m ArtifactGen_garak.gen --no-llm
 """
 
 from __future__ import annotations
@@ -18,82 +16,86 @@ import logging
 import sys
 from pathlib import Path
 
-from attack_library import list_patterns
-from artifacts_io import SPEC_FILE, default_run_dir
-from scenario_loader import list_scenario_files, load_or_build_scenario_spec, load_scenario
+from spec_io import SPEC_FILE, default_run_dir, load_spec, save_spec
 
-from .config_io import DEFAULT_CONFIG_DIR, save_config
-from .gate import gate_garak
-from .realize import realize
+from .artifact_io import DEFAULT_ARTIFACT_DIR, save_artifact
+from .gate import gate_garak, stamp_garak_coverage
+from .judge_rubric import generate_judge_rubric
+from .realize import RealizedProbe, _build_detection_config, realize_chat, serialize_tagged
 
 log = logging.getLogger(__name__)
+
+EXAMPLES_DIR = Path("examples/scenarios")
+
+
+def list_scenario_files() -> list[Path]:
+    if not EXAMPLES_DIR.is_dir():
+        return []
+    return sorted(EXAMPLES_DIR.glob("*.yaml"))
 
 
 def _process_scenario(
     path: Path,
-    config_dir: Path,
+    artifact_dir: Path,
     dry_run: bool = False,
-    use_llm: bool = True,
     run_dir: Path | None = None,
-    persist_spec: bool = True,
-    attack_pattern: str = "delayed_trigger",
-    attack_variant: str | None = None,
 ) -> dict:
-    loaded = load_scenario(path)
-    scenario_id = loaded.scenario_id
+    scenario_id = path.stem
     out_dir = default_run_dir(scenario_id, run_dir)
 
-    spec, spec_source = load_or_build_scenario_spec(
-        path,
-        run_dir=out_dir,
-        attack_pattern=attack_pattern,
-        attack_variant=attack_variant,
-        persist=persist_spec,
-        use_llm=False if dry_run else use_llm,
-    )
+    spec = load_spec(out_dir)
     result, gated_spec, reason = gate_garak(spec)
+    stamped = stamp_garak_coverage(gated_spec, result, reason)
+    save_spec(out_dir, stamped)
 
     entry = {
         "scenario_id": scenario_id,
-        "seed_id": spec.seed_id,
-        "threat_id": spec.threat_id,
-        "surface": spec.injection_surface,
-        "oracle": spec.oracle_target,
-        "attack_pattern": spec.injection.attack_pattern,
-        "attack_variant": spec.injection.attack_variant,
+        "seed_id": stamped.source.seed_id,
+        "threat_id": stamped.source.threat_id,
+        "surface": stamped.injection_surface,
+        "oracle": stamped.oracle_target,
+        "exploit": stamped.attack.exploit.name,
         "gate_result": result,
         "gate_reason": reason,
-        "config_path": None,
-        "spec_id": spec.spec_id,
-        "spec_source": spec_source,
+        "artifact_path": None,
+        "spec_id": stamped.spec_id,
+        "spec_source": "runs",
         "spec_path": str(out_dir / SPEC_FILE),
     }
 
     if result == "skip":
-        log.info("SKIP %s — %s (spec=%s)", scenario_id, reason, spec_source)
+        log.info("SKIP %s — %s (spec stamped)", scenario_id, reason)
         return entry
 
     if dry_run:
         log.info(
-            "DRY-RUN %s — gate=%s (%s) spec=%s",
+            "DRY-RUN %s — gate=%s (%s) spec stamped",
             scenario_id,
             result,
             reason,
-            spec_source,
         )
         return entry
 
-    realized = realize(gated_spec, use_llm=use_llm)
-    config_path = save_config(realized, config_dir)
-    entry["config_path"] = str(config_path)
-    entry["surface"] = gated_spec.injection_surface
-    entry["oracle"] = gated_spec.oracle_target
+    chat_history = realize_chat(stamped)
+    judge_rubric = generate_judge_rubric(stamped)
+    detection_config = _build_detection_config(stamped)
+    realized = RealizedProbe(
+        spec=stamped,
+        chat_history=chat_history,
+        conversation_text=serialize_tagged(chat_history),
+        payload_text=chat_history.payload_text,
+        detection_config=detection_config,
+        judge_rubric=judge_rubric,
+    )
+    artifact_path = save_artifact(realized, artifact_dir)
+    entry["artifact_path"] = str(artifact_path)
+    entry["surface"] = stamped.injection_surface
+    entry["oracle"] = stamped.oracle_target
     log.info(
-        "DONE %s → %s (spec=%s from %s)",
+        "DONE %s → %s (spec=%s)",
         scenario_id,
-        config_path.name,
+        artifact_path.name,
         entry["spec_path"],
-        spec_source,
     )
     return entry
 
@@ -101,8 +103,8 @@ def _process_scenario(
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Shared ScenarioSpec → Garak probe configs "
-            "(loads runs/{id}/spec.json when available)"
+            "Frozen EnvironmentSpec (runs/{id}/spec.json) → Garak probe artifacts "
+            "with garak_data chat history and judge rubric"
         ),
     )
     parser.add_argument(
@@ -111,23 +113,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Scenario YAML file(s). If omitted, processes all in examples/scenarios/",
     )
     parser.add_argument(
+        "--artifact-dir",
         "--config-dir",
-        default=str(DEFAULT_CONFIG_DIR),
-        help=f"Where to write YAML configs (default: {DEFAULT_CONFIG_DIR})",
-    )
-    parser.add_argument(
-        "--attack-pattern",
-        default="delayed_trigger",
-        choices=list_patterns(),
-        help="Attack pattern from attack_library (same as pipeline.py)",
-    )
-    parser.add_argument(
-        "--attack-variant",
-        default=None,
-        help=(
-            "Library variant (e.g. authority_impersonation, embedded_instruction). "
-            "Default: library default for the risk type, else mechanism slug from YAML"
-        ),
+        dest="artifact_dir",
+        default=str(DEFAULT_ARTIFACT_DIR),
+        help=f"Where to write YAML artifacts (default: {DEFAULT_ARTIFACT_DIR})",
     )
     parser.add_argument(
         "--run-dir",
@@ -135,19 +125,9 @@ def main(argv: list[str] | None = None) -> None:
         help="Override runs/{scenario_id}/ for shared spec.json (default: runs/{id})",
     )
     parser.add_argument(
-        "--no-persist-spec",
-        action="store_true",
-        help="Do not write/upgrade runs/{id}/spec.json",
-    )
-    parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Load/build ScenarioSpec + gate only — no LLM, no config output",
-    )
-    parser.add_argument(
-        "--no-llm",
-        action="store_true",
-        help="Skip LLM realize; use deterministic conversation fallback",
+        help="Load spec + gate + stamp only — no artifact output",
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -157,7 +137,7 @@ def main(argv: list[str] | None = None) -> None:
         format="%(levelname)-5s %(name)s: %(message)s",
     )
 
-    config_dir = Path(args.config_dir)
+    artifact_dir = Path(args.artifact_dir)
     run_dir = Path(args.run_dir) if args.run_dir else None
     paths = [Path(s) for s in args.scenarios] if args.scenarios else list_scenario_files()
     if not paths:
@@ -171,13 +151,9 @@ def main(argv: list[str] | None = None) -> None:
         try:
             entry = _process_scenario(
                 path,
-                config_dir,
+                artifact_dir,
                 dry_run=args.dry_run,
-                use_llm=not args.no_llm,
                 run_dir=run_dir,
-                persist_spec=not args.no_persist_spec,
-                attack_pattern=args.attack_pattern,
-                attack_variant=args.attack_variant,
             )
             manifest.append(entry)
             counts[entry["gate_result"]] += 1
@@ -191,13 +167,13 @@ def main(argv: list[str] | None = None) -> None:
             counts["error"] += 1
 
     if not args.dry_run:
-        config_dir.mkdir(parents=True, exist_ok=True)
-        manifest_path = config_dir / "manifest.json"
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = artifact_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2))
         log.info("Manifest written to %s", manifest_path)
 
     print(f"\n{'='*50}")
-    print("Garak config generation summary")
+    print("Garak artifact generation summary")
     print(f"{'='*50}")
     print(f"Total scenarios: {len(manifest)}")
     print(f"  Full:    {counts['full']}")
@@ -205,7 +181,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Skip:    {counts['skip']}")
     print(f"  Error:   {counts['error']}")
     if not args.dry_run and (counts["full"] + counts["partial"]) > 0:
-        print(f"\nConfigs: {config_dir}/")
+        print(f"\nArtifacts: {artifact_dir}/")
 
     print(
         f"\n{'Scenario':<25} {'Spec':<10} {'Surface':<15} "

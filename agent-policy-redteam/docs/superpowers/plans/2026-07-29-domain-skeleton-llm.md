@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace hardcoded finance/HR domain tool packs with a deterministic draft extracted from forge YAML, always completed by an LLM grounded in that draft, then frozen in `ScenarioSpec.domain_skeleton`.
+**Goal:** Replace hardcoded finance/HR domain tool packs with a deterministic draft extracted from scenario YAML, always completed by an LLM grounded in that draft, then frozen in `ScenarioSpec.domain_skeleton`.
 
-**Architecture:** `scenario_loader` extracts an honest (possibly incomplete) `DomainSkeleton` from scenario text. `domain_skeleton_llm.complete_domain_skeleton` sends narrative + draft to the LLM and returns a full skeleton that must preserve draft anchors. `forge_scenario_to_spec` uses the completed skeleton; downstream codegen stays deterministic.
+**Architecture:** `scenario_loader` extracts an honest (possibly incomplete) `DomainSkeleton` from scenario text. `domain_skeleton_llm.complete_domain_skeleton` sends narrative + draft to the LLM and returns a full skeleton that must preserve draft anchors. `scenario_to_spec` uses the completed skeleton; downstream codegen stays deterministic.
 
 **Tech Stack:** Python 3, Pydantic `DomainSkeleton` / `ScenarioSpec`, OpenAI-compatible client (same pattern as `seed_generator.py`), `unittest`.
 
@@ -22,7 +22,7 @@
 | File | Responsibility |
 |------|----------------|
 | `domain_skeleton_llm.py` | Anchor validation, prompt, LLM rewrite, retries |
-| `scenario_loader.py` | Deterministic draft extract; wire LLM into `forge_scenario_to_spec` |
+| `scenario_loader.py` | Deterministic draft extract; wire LLM into `scenario_to_spec` |
 | `test_domain_skeleton.py` | Extract, anchors, mocked LLM completion |
 | `README.md` / `DESIGN.md` | Brief note that domain skeleton is extract + LLM, not finance defaults |
 
@@ -127,7 +127,7 @@ Expected: FAIL with `ModuleNotFoundError: domain_skeleton_llm` (or import error)
 Create `domain_skeleton_llm.py`:
 
 ```python
-"""Grounded LLM completion of DomainSkeleton drafts from forge scenarios."""
+"""Grounded LLM completion of DomainSkeleton drafts from scenarios."""
 
 from __future__ import annotations
 
@@ -316,7 +316,7 @@ def extract_target_surfaces(scenario: dict) -> list[str]:
 
 
 def extract_domain_draft(scenario: dict) -> DomainSkeleton:
-    """Build a possibly incomplete DomainSkeleton from forge text only."""
+    """Build a possibly incomplete DomainSkeleton from scenario text only."""
     tools_found = extract_named_tools(scenario)
     trigger = extract_trigger_tool(scenario)
     surfaces = extract_target_surfaces(scenario)
@@ -356,7 +356,7 @@ def extract_domain_draft(scenario: dict) -> DomainSkeleton:
     )
 ```
 
-4. Keep `forge_scenario_to_spec` on the old call path for this task (Task 4 rewires it). In Task 2 only:
+4. Keep `scenario_to_spec` on the old call path for this task (Task 4 rewires it). In Task 2 only:
 
 - Add `extract_named_tools`, `extract_trigger_tool`, `extract_target_surfaces`, `extract_domain_draft`.
 - Delete `_FINANCE_*` constants and delete `_finance_domain_skeleton` / `_hr_exfil_domain_skeleton`.
@@ -390,7 +390,7 @@ def _infer_trigger_tool(scenario: dict) -> str:
     return found
 ```
 
-Note: until Task 4, `forge_scenario_to_spec` may fail on scenarios with empty surfaces (no longer defaulting to `notes`). That is expected; Task 4 completes surfaces via LLM.
+Note: until Task 4, `scenario_to_spec` may fail on scenarios with empty surfaces (no longer defaulting to `notes`). That is expected; Task 4 completes surfaces via LLM.
 - [ ] **Step 4: Run extract tests**
 
 Run: `python -m unittest test_domain_skeleton.TestExtractDraft -v`  
@@ -630,23 +630,23 @@ git commit -m "Add grounded LLM DomainSkeleton completion with mocks."
 
 ---
 
-### Task 4: Wire into `forge_scenario_to_spec`
+### Task 4: Wire into `scenario_to_spec`
 
 **Files:**
-- Modify: `scenario_loader.py` (`forge_scenario_to_spec` and related infer calls)
+- Modify: `scenario_loader.py` (`scenario_to_spec` and related infer calls)
 - Optionally modify: `ArtifactGen_garak/gen.py` only if it already has `--no-llm` that should pass through (optional thin kwarg; skip if invasive)
 
 **Interfaces:**
 - Consumes: `extract_domain_draft`, `complete_domain_skeleton`
-- Produces: `forge_scenario_to_spec(..., use_llm: bool = True)` completing skeleton before building `ScenarioSpec`
+- Produces: `scenario_to_spec(..., use_llm: bool = True)` completing skeleton before building `ScenarioSpec`
 
 - [ ] **Step 1: Write a wiring test with mocked completer**
 
 ```python
-class TestForgeScenarioToSpecWiring(unittest.TestCase):
-    def test_forge_scenario_to_spec_uses_completed_skeleton(self):
+class TestScenarioToSpecWiring(unittest.TestCase):
+    def test_scenario_to_spec_uses_completed_skeleton(self):
         from unittest.mock import patch
-        from scenario_loader import forge_scenario_to_spec, load_scenario
+        from scenario_loader import scenario_to_spec, load_scenario
 
         loaded = load_scenario(SCENARIOS / "AP-T2-01-28712e.yaml")
         completed = DomainSkeleton(
@@ -673,7 +673,7 @@ class TestForgeScenarioToSpecWiring(unittest.TestCase):
             "scenario_loader.complete_domain_skeleton",
             return_value=completed,
         ) as mocked:
-            spec = forge_scenario_to_spec(loaded.raw, use_llm=True)
+            spec = scenario_to_spec(loaded.raw, use_llm=True)
         mocked.assert_called_once()
         self.assertEqual(
             {t.name for t in spec.domain_skeleton.required_tools},
@@ -685,10 +685,10 @@ class TestForgeScenarioToSpecWiring(unittest.TestCase):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `python -m unittest test_domain_skeleton.TestForgeScenarioToSpecWiring -v`  
+Run: `python -m unittest test_domain_skeleton.TestScenarioToSpecWiring -v`  
 Expected: FAIL (`use_llm` unexpected / completer not wired).
 
-- [ ] **Step 3: Wire `forge_scenario_to_spec`**
+- [ ] **Step 3: Wire `scenario_to_spec`**
 
 Near top of `scenario_loader.py`:
 
@@ -696,10 +696,10 @@ Near top of `scenario_loader.py`:
 from domain_skeleton_llm import complete_domain_skeleton
 ```
 
-Update signature and body of `forge_scenario_to_spec`:
+Update signature and body of `scenario_to_spec`:
 
 ```python
-def forge_scenario_to_spec(
+def scenario_to_spec(
     scenario: dict,
     attack_pattern: str = "delayed_trigger",
     attack_variant: str | None = None,
@@ -775,7 +775,7 @@ git commit -m "Wire grounded LLM domain skeleton completion into ScenarioSpec bu
 
 Replace the idea that ScenarioSpec is purely deterministic with:
 
-- Shared `ScenarioSpec`: tools/entities via **extract from forge + grounded LLM completion**, frozen in `runs/{id}/spec.json`
+- Shared `ScenarioSpec`: tools/entities via **extract from the scenario + grounded LLM completion**, frozen in `runs/{id}/spec.json`
 - Artifact codegen remains deterministic from that frozen skeleton; seed data may still use LLM
 
 - [ ] **Step 2: Update DESIGN.md**

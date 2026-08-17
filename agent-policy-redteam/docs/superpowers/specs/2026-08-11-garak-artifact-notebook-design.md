@@ -7,7 +7,7 @@
 
 Ship an asago-examples-style Jupyter notebook that:
 
-1. Lets the user pick a forge scenario via dropdown
+1. Lets the user pick a scenario via dropdown
 2. Labels it for Garak coverage: `full` | `partial` | `skip`
 3. Calls an LLM to realize chat history + detector criteria
 4. Writes the shared `ScenarioSpec` and the Garak YAML artifact (no full pipeline env/traces)
@@ -20,7 +20,7 @@ Select scenario (dropdown over examples/scenarios/*.yaml)
   → gate_garak(spec)  → label: full | partial | skip
   → if skip: show reason; stop (no Garak YAML)
   → else realize(use_llm=True) with configured provider
-  → save_config → ArtifactGen_garak/configs/{id}.yaml
+  → save_artifact → ArtifactGen_garak/artifacts/{id}.yaml
 ```
 
 ## Labelling
@@ -36,7 +36,7 @@ Select scenario (dropdown over examples/scenarios/*.yaml)
 ## Artifacts
 
 1. **`runs/{scenario_id}/spec.json`** — always persisted when the spec is built
-2. **`ArtifactGen_garak/configs/{scenario_id}.yaml`** — only when gate ≠ `skip`
+2. **`ArtifactGen_garak/artifacts/{scenario_id}.yaml`** — only when gate ≠ `skip`
 
 Garak YAML contents (existing shape):
 
