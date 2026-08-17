@@ -5,6 +5,7 @@ Flow::
     scenario YAML
       → draft_spec.extract_spec_draft()
       → choose exploit from exploit_styles.json
+      → plan_spec.generate_spec_plan()     (--plan-only)
       → llm_complete_spec.generate_environment_spec()
       → gate 1 (schema) + gate 2 (completeness)
       → spec_io.save_spec()
@@ -22,10 +23,17 @@ from pathlib import Path
 
 import yaml
 
-from draft_spec import extract_spec_draft, scenario_narrative_excerpt
+from draft_spec import (
+    extract_spec_draft,
+    scenario_attack_tree_excerpt,
+    scenario_narrative_excerpt,
+    scenario_narrative_only_excerpt,
+    scenario_plan_grounding_text,
+)
 from environment_spec import EnvironmentSpec, ExploitStyle
 from llm_complete_spec import SpecBuildResult, generate_environment_spec
-from spec_io import SPEC_FILE, default_run_dir, load_spec, save_spec
+from plan_spec import PlanBuildResult, generate_spec_plan
+from spec_io import PLAN_FILE, SPEC_FILE, default_run_dir, load_spec, save_plan, save_spec
 
 log = logging.getLogger(__name__)
 
@@ -116,6 +124,50 @@ def _is_v2_spec(path: Path) -> bool:
     return data.get("schema_version") == 2
 
 
+def build_spec_plan(
+    scenario_path: str | Path,
+    *,
+    run_dir: str | Path | None = None,
+    exploit_name: str | None = None,
+    persist: bool = True,
+    force: bool = False,
+) -> tuple[PlanBuildResult, str]:
+    """Pass 1 only: narrative + draft → ``runs/{id}/spec_plan.json``."""
+    loaded = load_scenario(scenario_path)
+    out_dir = default_run_dir(loaded.scenario_id, run_dir)
+    path = out_dir / PLAN_FILE
+
+    if path.is_file() and not force:
+        from spec_io import load_plan
+
+        plan = load_plan(out_dir)
+        log.info("Loaded spec plan from %s", path)
+        return PlanBuildResult(plan=plan, ok=True), "disk"
+
+    exploit = ExploitStyle.model_validate(choose_exploit(exploit_name))
+    draft = extract_spec_draft(loaded.raw, exploit)
+    attack_tree = scenario_attack_tree_excerpt(loaded.raw)
+    narrative = scenario_narrative_only_excerpt(loaded.raw)
+    result = generate_spec_plan(
+        attack_tree,
+        narrative,
+        draft,
+        exploit,
+        grounding_text=scenario_plan_grounding_text(loaded.raw),
+    )
+    if persist:
+        save_plan(out_dir, result.plan)
+        if not result.ok:
+            sidecar = out_dir / "plan_validation.json"
+            sidecar.write_text(
+                json.dumps({"ok": result.ok, "errors": result.errors}, indent=2),
+                encoding="utf-8",
+            )
+            log.warning("Wrote plan validation sidecar %s", sidecar)
+    source = "rebuilt" if path.is_file() else "built"
+    return result, source
+
+
 def build_environment_spec(
     scenario_path: str | Path,
     *,
@@ -139,8 +191,14 @@ def build_environment_spec(
 
     exploit = ExploitStyle.model_validate(choose_exploit(exploit_name))
     draft = extract_spec_draft(loaded.raw, exploit)
+    narrative = scenario_narrative_excerpt(loaded.raw)
+    attack_tree = scenario_attack_tree_excerpt(loaded.raw)
     result = generate_environment_spec(
-        scenario_narrative_excerpt(loaded.raw), draft, exploit
+        narrative,
+        draft,
+        exploit,
+        persist_dir=out_dir if persist else None,
+        attack_tree=attack_tree,
     )
     if persist:
         save_spec(out_dir, result.spec)
@@ -188,6 +246,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Exploit style from exploit_styles.json (default: random wording pack)",
     )
     parser.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="Pass 1 only: write runs/{id}/spec_plan.json (plan-then-execute experiment)",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Rebuild spec even if a v2 spec.json exists",
@@ -211,6 +274,34 @@ def main(argv: list[str] | None = None) -> None:
 
     for path in paths:
         try:
+            if args.plan_only:
+                result, source = build_spec_plan(
+                    path,
+                    run_dir=run_dir,
+                    exploit_name=args.exploit,
+                    force=args.force,
+                )
+                out = default_run_dir(load_scenario(path).scenario_id, run_dir) / PLAN_FILE
+                log.info("%s → %s (%s)", path.name, out, source)
+                print(summarize_scenario(load_scenario(path)))
+                tool_names = [t.name for t in result.plan.tools]
+                print(
+                    f"  goal: {result.plan.attack_goal}"
+                )
+                print(
+                    f"  oracle: {result.plan.oracle.tool}  "
+                    f"pass_when: {result.plan.oracle.pass_when}"
+                )
+                print(f"  signal: {result.plan.success_criteria.observable_signal}")
+                print(f"  tools: {tool_names}")
+                if not result.ok:
+                    counts["invalid"] += 1
+                    exit_code = 1
+                    log.error("Plan failed gate; see %s", out.parent / "plan_validation.json")
+                else:
+                    counts[source if source in counts else "built"] += 1
+                continue
+
             spec, source, result = build_environment_spec(
                 path,
                 run_dir=run_dir,
