@@ -3,10 +3,9 @@
 Flow::
 
     scenario YAML
-      → draft_spec.extract_spec_draft()
       → choose exploit from exploit_styles.json
-      → plan_spec.generate_spec_plan()     (--plan-only)
-      → llm_complete_spec.generate_environment_spec()
+      → plan_spec.generate_spec_plan()          (pass 1)
+      → materialize_spec.materialize_spec()     (pass 2)
       → gate 1 (schema) + gate 2 (completeness)
       → spec_io.save_spec()
 """
@@ -24,15 +23,15 @@ from pathlib import Path
 import yaml
 
 from draft_spec import (
-    extract_spec_draft,
+    scenario_actor_beliefs_excerpt,
     scenario_attack_tree_excerpt,
     scenario_narrative_excerpt,
-    scenario_narrative_only_excerpt,
+    scenario_narrative_plan_excerpt,
     scenario_plan_grounding_text,
 )
 from environment_spec import EnvironmentSpec, ExploitStyle
 from llm_complete_spec import SpecBuildResult, generate_environment_spec
-from plan_spec import PlanBuildResult, generate_spec_plan
+from plan_spec import PlanBuildResult, gate_plan_errors, generate_spec_plan
 from spec_io import PLAN_FILE, SPEC_FILE, default_run_dir, load_spec, save_plan, save_spec
 
 log = logging.getLogger(__name__)
@@ -141,19 +140,27 @@ def build_spec_plan(
         from spec_io import load_plan
 
         plan = load_plan(out_dir)
+        grounding = scenario_plan_grounding_text(loaded.raw)
+        exploit = ExploitStyle.model_validate(choose_exploit(exploit_name))
+        errors = gate_plan_errors(
+            plan,
+            source_text=grounding,
+            exploit_name=exploit.name,
+        )
         log.info("Loaded spec plan from %s", path)
-        return PlanBuildResult(plan=plan, ok=True), "disk"
+        return PlanBuildResult(plan=plan, ok=not errors, errors=errors), "disk"
 
     exploit = ExploitStyle.model_validate(choose_exploit(exploit_name))
-    draft = extract_spec_draft(loaded.raw, exploit)
     attack_tree = scenario_attack_tree_excerpt(loaded.raw)
-    narrative = scenario_narrative_only_excerpt(loaded.raw)
+    narrative = scenario_narrative_plan_excerpt(loaded.raw)
+    actor_beliefs = scenario_actor_beliefs_excerpt(loaded.raw)
+    grounding = scenario_plan_grounding_text(loaded.raw)
     result = generate_spec_plan(
         attack_tree,
         narrative,
-        draft,
+        actor_beliefs,
         exploit,
-        grounding_text=scenario_plan_grounding_text(loaded.raw),
+        grounding_text=grounding,
     )
     if persist:
         save_plan(out_dir, result.plan)
@@ -190,15 +197,36 @@ def build_environment_spec(
         return spec, "disk", None
 
     exploit = ExploitStyle.model_validate(choose_exploit(exploit_name))
-    draft = extract_spec_draft(loaded.raw, exploit)
+    plan_result, _plan_source = build_spec_plan(
+        scenario_path,
+        run_dir=run_dir,
+        exploit_name=exploit.name,
+        persist=persist,
+        force=False,
+    )
+    if not plan_result.ok:
+        plan_result, _plan_source = build_spec_plan(
+            scenario_path,
+            run_dir=run_dir,
+            exploit_name=exploit.name,
+            persist=persist,
+            force=True,
+        )
+    if not plan_result.ok:
+        raise RuntimeError(
+            "Pass 1 plan gate failed: " + "; ".join(plan_result.errors)
+        )
+
     narrative = scenario_narrative_excerpt(loaded.raw)
     attack_tree = scenario_attack_tree_excerpt(loaded.raw)
     result = generate_environment_spec(
         narrative,
-        draft,
+        loaded.raw,
+        plan_result.plan,
         exploit,
         persist_dir=out_dir if persist else None,
         attack_tree=attack_tree,
+        source_text=scenario_plan_grounding_text(loaded.raw),
     )
     if persist:
         save_spec(out_dir, result.spec)
@@ -248,7 +276,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--plan-only",
         action="store_true",
-        help="Pass 1 only: write runs/{id}/spec_plan.json (plan-then-execute experiment)",
+        help="Pass 1 only: write runs/{id}/spec_plan.json and stop",
     )
     parser.add_argument(
         "--force",
