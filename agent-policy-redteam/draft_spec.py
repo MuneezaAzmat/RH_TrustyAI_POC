@@ -233,40 +233,43 @@ def extract_spec_draft(scenario: dict, exploit: ExploitStyle) -> dict:
     }
 
 
-def _attack_tree_lines(node: dict | None, lines: list[str], depth: int = 0) -> None:
-    if not node:
-        return
-    label = node.get("label") or ""
-    description = node.get("description") or ""
-    indent = "  " * depth
-    if label:
-        lines.append(f"{indent}- {label}")
-    if description:
-        lines.append(f"{indent}  {description}")
-    for child in node.get("children") or []:
-        _attack_tree_lines(child, lines, depth + 1)
+def scenario_attack_tree_excerpt(scenario: dict) -> str:
+    """Attack tree for pass-1 planning: goal plus each node's zone and description only."""
+    tree = scenario.get("attack_tree") or {}
+    lines: list[str] = []
+    goal = tree.get("goal", "")
+    if goal:
+        lines.append(f"goal: {goal}")
+
+    def _walk(node: dict) -> None:
+        zone = node.get("zone", "")
+        description = (node.get("description") or "").strip()
+        if description:
+            lines.append(f"[{zone}] {description}")
+        for child in node.get("children") or []:
+            _walk(child)
+
+    root = tree.get("root")
+    if root:
+        _walk(root)
+    return "\n".join(lines).strip()
+
+
+def scenario_plan_grounding_text(scenario: dict) -> str:
+    """Attack tree excerpt + narrative text for pass-1 plan gate grounding."""
+    parts = [
+        scenario_attack_tree_excerpt(scenario),
+        scenario_narrative_text(scenario),
+    ]
+    return "\n".join(part for part in parts if part.strip())
 
 
 def scenario_narrative_excerpt(scenario: dict) -> str:
-    """Compact narrative + attack tree for LLM prompts (not the full YAML)."""
+    """Narrative summary for LLM prompts (not the full YAML)."""
     narrative = scenario.get("narrative") or {}
-    tree = scenario.get("attack_tree") or {}
-    lines = [
-        f"title: {narrative.get('title', '')}",
-        f"summary: {narrative.get('summary', '')}",
-        f"entry_point: {narrative.get('entry_point', '')}",
-        f"goal: {tree.get('goal', '')}",
-    ]
-    steps = narrative.get("steps") or []
-    if steps:
-        lines.append("steps:")
-        for step in steps:
-            n = step.get("step_number", "?")
-            zone = step.get("zone", "")
-            action = step.get("action", "")
-            lines.append(f"  {n}. [{zone}] {action}")
-    root = tree.get("root")
-    if root:
-        lines.append("attack_tree:")
-        _attack_tree_lines(root, lines)
-    return "\n".join(lines).strip()
+    return (narrative.get("summary") or "").strip()
+
+
+def scenario_narrative_only_excerpt(scenario: dict) -> str:
+    """Alias for :func:`scenario_narrative_excerpt`."""
+    return scenario_narrative_excerpt(scenario)

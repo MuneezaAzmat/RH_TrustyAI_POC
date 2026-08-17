@@ -258,8 +258,26 @@ def placement_target_exists(spec: EnvironmentSpec, component: str) -> bool:
     return path_exists(spec, c)
 
 
-def gate1_schema_errors(spec: EnvironmentSpec, *, chosen_exploit: ExploitStyle) -> list[str]:
-    """Gate 1: schema and referential integrity (no LLM)."""
+def name_in_source(name: str, source_text: str) -> bool:
+    """True if ``name`` appears in narrative / attack-tree text (case-insensitive)."""
+    return bool(name) and name.lower() in (source_text or "").lower()
+
+
+def _inferred_covers_tool(spec: EnvironmentSpec, name: str) -> bool:
+    prefix = f"environment.tools.{name}"
+    return any(
+        inf.path == prefix or inf.path.startswith(prefix + ".")
+        for inf in spec.provenance.inferred
+    )
+
+
+def gate1_schema_errors(
+    spec: EnvironmentSpec,
+    *,
+    chosen_exploit: ExploitStyle,
+    source_text: str = "",
+) -> list[str]:
+    """Gate 1: schema, referential integrity, and tool-name grounding (no LLM)."""
     errors: list[str] = []
 
     if spec.schema_version != 2:
@@ -311,10 +329,29 @@ def gate1_schema_errors(spec: EnvironmentSpec, *, chosen_exploit: ExploitStyle) 
     for check in spec.observation.success_if_any:
         if check.kind == "tool_call" and check.tool and check.tool not in tool_names:
             errors.append(f"oracle {check.id} references unknown tool {check.tool}")
+        if (
+            source_text
+            and check.kind == "tool_call"
+            and check.tool
+            and not name_in_source(check.tool, source_text)
+        ):
+            errors.append(
+                f"oracle {check.id} tool {check.tool} is not grounded in narrative/attack tree"
+            )
         if check.kind == "output_content" and check.channel and check.channel != "chat":
             errors.append(f"oracle {check.id} output_content channel must be chat")
         if check.store and check.store not in store_ids:
             errors.append(f"oracle {check.id} references unknown store {check.store}")
+
+    if source_text:
+        for tool in spec.environment.tools:
+            if name_in_source(tool.name, source_text):
+                continue
+            if _inferred_covers_tool(spec, tool.name):
+                continue
+            errors.append(
+                f"tool {tool.name} does not appear in narrative/attack tree and is not listed in provenance.inferred"
+            )
 
     for inferred in spec.provenance.inferred:
         if not path_exists(spec, inferred.path):

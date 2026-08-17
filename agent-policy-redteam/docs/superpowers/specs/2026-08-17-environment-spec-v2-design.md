@@ -41,11 +41,11 @@ The spec describes:
 
 ```
 scenario YAML
-  → deterministic extract   (identity, tags, named tools, goal, obvious surfaces)
+  → deterministic extract   (identity, tags, goal, obvious surfaces; tools empty)
   → choose exploit          (--exploit or random from exploit_styles.json)
-  → draft JSON              (source + task stubs + exploit + named tools)
-  → LLM complete            (prompts/generate_spec.md)
-  → Gate 1 schema/refs      (Pydantic, fail closed)
+  → draft JSON              (source + task stubs + exploit; no tool names)
+  → LLM complete            (prompts/generate_spec.md; tools from narrative)
+  → Gate 1 schema/refs      (Pydantic + tool names grounded in narrative/tree)
   → Gate 2 completeness     (prompts/validate_spec.md)
   → optional one repair pass
   → write runs/{id}/spec.json + validation sidecar on failure
@@ -57,7 +57,7 @@ Template slots in prompt files use `{{double_braces}}`. The script substitutes t
 |---|---|
 | `{{exploit_json}}` | Chosen `{name, description}` object (also written to `attack.exploit`) |
 | `{{draft_json}}` | Deterministic extract, before LLM completion |
-| `{{narrative}}` | Compact narrative excerpt (title, summary, entry_point, goal, steps) |
+| `{{narrative}}` | Compact narrative + attack-tree excerpt (title, summary, entry_point, goal, steps, tree labels) |
 | `{{spec_json}}` | Candidate spec, for the validator only |
 
 ## Spec shape (schema_version 2)
