@@ -21,6 +21,7 @@ class SourceSpec(BaseModel):
     mechanism_name: str = ""
     domain: str
     tags: list[str] = Field(default_factory=list)
+    narrative_summary: str = ""
 
 
 class TaskSpec(BaseModel):
@@ -76,10 +77,40 @@ class AgentSpec(BaseModel):
     data_stores: list[str] = Field(default_factory=list)
 
 
+class RagSpec(BaseModel):
+    """Retrieval layer when the attack flows through poisoned context."""
+
+    id: str = "primary_rag"
+    purpose: str = ""
+    corpus_store: str
+    chunk_fields: list[str]
+    retrieval_trigger: str
+    injectable_field: str
+
+
+class McpServerSpec(BaseModel):
+    """MCP server exposing tools to the agent."""
+
+    id: str
+    purpose: str
+    tools: list[str] = Field(default_factory=list)
+
+
+class CredentialSpec(BaseModel):
+    """Scoped secret the agent or tools may use."""
+
+    id: str
+    purpose: str
+    scope: str = ""
+
+
 class EnvironmentBlock(BaseModel):
     agents: list[AgentSpec]
     tools: list[EnvironmentTool]
     data_stores: list[DataStore] = Field(default_factory=list)
+    rag: RagSpec | None = None
+    mcp_servers: list[McpServerSpec] = Field(default_factory=list)
+    credentials: list[CredentialSpec] = Field(default_factory=list)
 
 
 class PlacementTarget(BaseModel):
@@ -242,6 +273,17 @@ def path_exists(spec: EnvironmentSpec, path: str) -> bool:
             return any(f.name == field_match.group(1) for f in store.fields)
         return True
 
+    if p.startswith("environment.rag") or p == "rag":
+        return spec.environment.rag is not None
+
+    mcp_match = re.search(r"mcp_servers\.([A-Za-z0-9_]+)", p)
+    if mcp_match:
+        return any(s.id == mcp_match.group(1) for s in spec.environment.mcp_servers)
+
+    cred_match = re.search(r"credentials\.([A-Za-z0-9_]+)", p)
+    if cred_match:
+        return any(c.id == cred_match.group(1) for c in spec.environment.credentials)
+
     if p.startswith("task.") or p.startswith("source.") or p.startswith("attack."):
         return True
     return False
@@ -251,11 +293,61 @@ def placement_target_exists(spec: EnvironmentSpec, component: str) -> bool:
     c = component.strip()
     if c.startswith("task."):
         return hasattr(spec.task, c.split(".", 1)[1])
+    if c.startswith("environment.rag"):
+        return spec.environment.rag is not None
     if "data_stores." in c or c.startswith("environment."):
         return path_exists(spec, c)
     if c in spec.tool_names:
         return True
     return path_exists(spec, c)
+
+
+def _validate_rag(spec: EnvironmentSpec, errors: list[str]) -> None:
+    rag = spec.environment.rag
+    if rag is None:
+        return
+    store = _store_by_id(spec, rag.corpus_store)
+    if store is None:
+        errors.append(f"environment.rag.corpus_store {rag.corpus_store!r} not in data_stores")
+        return
+    field_names = {f.name for f in store.fields}
+    for field in rag.chunk_fields:
+        if field not in field_names:
+            errors.append(f"environment.rag.chunk_fields references unknown field {field!r}")
+    if rag.injectable_field not in field_names:
+        errors.append(
+            f"environment.rag.injectable_field {rag.injectable_field!r} not on store {rag.corpus_store}"
+        )
+    elif store.fields:
+        injectable = next(f for f in store.fields if f.name == rag.injectable_field)
+        if not injectable.injectable:
+            errors.append(
+                f"environment.rag.injectable_field {rag.injectable_field!r} must be injectable on store {rag.corpus_store}"
+            )
+
+
+def _validate_mcp_servers(spec: EnvironmentSpec, tool_names: set[str], errors: list[str]) -> None:
+    for server in spec.environment.mcp_servers:
+        if not server.id.strip():
+            errors.append("environment.mcp_servers entry missing id")
+        if not server.purpose.strip():
+            errors.append(f"mcp_server {server.id} missing purpose")
+        for tool in server.tools:
+            if tool not in tool_names:
+                errors.append(f"mcp_server {server.id} references unknown tool {tool}")
+
+
+def _validate_credentials(spec: EnvironmentSpec, errors: list[str]) -> None:
+    seen: set[str] = set()
+    for cred in spec.environment.credentials:
+        if not cred.id.strip():
+            errors.append("environment.credentials entry missing id")
+        elif cred.id in seen:
+            errors.append(f"duplicate credential id {cred.id}")
+        else:
+            seen.add(cred.id)
+        if not cred.purpose.strip():
+            errors.append(f"credential {cred.id} missing purpose")
 
 
 def name_in_source(name: str, source_text: str) -> bool:
@@ -320,6 +412,10 @@ def gate1_schema_errors(
                 errors.append(
                     f"tool {tool.name} side_effect field {effect.field} not on store {effect.store}"
                 )
+
+    _validate_rag(spec, errors)
+    _validate_mcp_servers(spec, tool_names, errors)
+    _validate_credentials(spec, errors)
 
     if not placement_target_exists(spec, spec.attack.placement.target.component):
         errors.append(
