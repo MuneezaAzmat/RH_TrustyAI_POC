@@ -1,7 +1,5 @@
-"""Scenario YAML → schema-v2 EnvironmentSpec → Garak artifacts."""
+"""Garak probe artifact generation."""
 
-from environment_spec import EnvironmentSpec
+from .exploit_style import ExploitStyle
 
-from .gate import gate_garak
-
-__all__ = ["EnvironmentSpec", "gate_garak"]
+__all__ = ["ExploitStyle"]
