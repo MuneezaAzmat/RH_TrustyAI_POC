@@ -20,7 +20,16 @@ pip install -r requirements.txt
 cp .env.example .env   # set GEMINI_API_KEY or configure Ollama
 ```
 
-Supported LLM backends: **Gemini** (default when `GEMINI_API_KEY` is set) or **Ollama** (`REDTEAM_PROVIDER=ollama`).
+Supported LLM backends: **Gemini** (default when `GEMINI_API_KEY` is set), **OpenAI**, **Ollama**, Hugging Face, or OpenRouter.
+
+## Interactive demo
+
+End-to-end Jupyter walkthrough (API key → scenario YAML → artifact → Garak `toolchat.ToolChat` attack):
+
+```bash
+pip install ipywidgets
+jupyter notebook ArtifactGen_garak/Demo/demo.ipynb
+```
 
 ## Generate artifacts
 
