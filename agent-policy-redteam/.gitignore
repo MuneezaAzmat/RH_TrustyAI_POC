@@ -4,6 +4,7 @@ __pycache__/
 /ArtifactGen_garak/run_garak_batch.py
 /reports/*
 /runs/*
-*test*
 *html
 redhat-logo.png
+.env
+run_garak_batch.py
